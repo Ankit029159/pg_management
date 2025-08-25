@@ -1,0 +1,30 @@
+/* src/Hero.css */
+
+/* Custom Styles for Swiper Navigation Arrows */
+.swiper-button-next,
+.swiper-button-prev {
+  color: white !important; /* Make arrows white */
+  background-color: rgba(0, 0, 0, 0.3); /* Add a subtle background */
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background-color: rgba(0, 0, 0, 0.6); /* Darken background on hover */
+}
+
+/* Custom Styles for Swiper Pagination Dots */
+.swiper-pagination-bullet {
+  background-color: rgba(255, 255, 255, 0.7) !important; /* Inactive dots */
+  width: 10px !important;
+  height: 10px !important;
+  opacity: 1 !important;
+  transition: background-color 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #3b82f6 !important; /* Active dot - Tailwind's blue-500 */
+}
