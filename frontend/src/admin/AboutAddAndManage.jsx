@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiImage, FiUpload, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiImage, FiUpload } from 'react-icons/fi';
 import axios from 'axios';
 
-const HeroSectionAddManage = () => {
-  const [heroSlides, setHeroSlides] = useState([]);
+const AboutAddAndManage = () => {
+  const [aboutData, setAboutData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingSlide, setEditingSlide] = useState(null);
+  const [editingAbout, setEditingAbout] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    order: 0
+    subtitle: '',
+    story: '',
+    mission: '',
+    vision: ''
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
@@ -26,24 +28,29 @@ const HeroSectionAddManage = () => {
     if (!photoPath) return '';
     if (photoPath.startsWith('http')) return photoPath;
     if (photoPath.startsWith('/uploads')) return `${BASE_URL}${photoPath}`;
-    return `${BASE_URL}/uploads/hero/${photoPath}`;
+    return `${BASE_URL}/uploads/about/${photoPath}`;
   };
 
-  // Fetch hero slides on component mount
+  // Fetch about data on component mount
   useEffect(() => {
-    fetchHeroSlides();
+    fetchAboutData();
   }, []);
 
-  const fetchHeroSlides = async () => {
+  const fetchAboutData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/hero/all`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      setHeroSlides(response.data.data);
+      const response = await axios.get(`${API_URL}/about`);
+      setAboutData(response.data.data);
     } catch (error) {
-      console.error('Error fetching hero slides:', error);
-      setError('Failed to fetch hero slides');
+      console.error('Error fetching about data:', error);
+      // If it's a 404 or the response indicates no data found, set aboutData to null
+      if (error.response?.status === 404 || 
+          (error.response?.data?.success === false && error.response?.data?.message === 'About data not found')) {
+        setAboutData(null);
+        setError(''); // Clear any previous errors
+      } else {
+        setError('Failed to fetch about data');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,8 +59,11 @@ const HeroSectionAddManage = () => {
   const validateForm = () => {
     const errors = {};
     if (!formData.title.trim()) errors.title = 'Title is required';
-    if (!formData.description.trim()) errors.description = 'Description is required';
-    if (!editingSlide && !selectedFile) errors.photo = 'Please select an image';
+    if (!formData.subtitle.trim()) errors.subtitle = 'Subtitle is required';
+    if (!formData.story.trim()) errors.story = 'Story is required';
+    if (!formData.mission.trim()) errors.mission = 'Mission is required';
+    if (!formData.vision.trim()) errors.vision = 'Vision is required';
+    if (!editingAbout && !selectedFile) errors.photo = 'Please select an image';
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -98,8 +108,10 @@ const HeroSectionAddManage = () => {
       // Create FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('order', formData.order);
+      formDataToSend.append('subtitle', formData.subtitle);
+      formDataToSend.append('story', formData.story);
+      formDataToSend.append('mission', formData.mission);
+      formDataToSend.append('vision', formData.vision);
       
       if (selectedFile) {
         formDataToSend.append('photo', selectedFile);
@@ -112,81 +124,70 @@ const HeroSectionAddManage = () => {
         }
       };
 
-      if (editingSlide) {
-        // Update existing slide
-        await axios.put(`${API_URL}/hero/${editingSlide._id}`, formDataToSend, config);
+      if (editingAbout) {
+        // Update existing about
+        await axios.put(`${API_URL}/about/${editingAbout._id}`, formDataToSend, config);
       } else {
-        // Create new slide
-        await axios.post(`${API_URL}/hero`, formDataToSend, config);
+        // Create new about
+        await axios.post(`${API_URL}/about`, formDataToSend, config);
       }
 
       // Reset form and refresh data
       resetForm();
-      fetchHeroSlides();
+      fetchAboutData();
     } catch (error) {
-      console.error('Error saving hero slide:', error);
+      console.error('Error saving about data:', error);
       if (error.response?.data?.errors) {
         setFormErrors(error.response.data.errors);
       } else {
-        setError('Failed to save hero slide');
+        setError('Failed to save about data');
       }
     } finally {
       setUploading(false);
     }
   };
 
-  const handleEdit = (slide) => {
-    setEditingSlide(slide);
+  const handleEdit = (about) => {
+    setEditingAbout(about);
     setFormData({
-      title: slide.title || '',
-      description: slide.description || '',
-      order: slide.order || 0
+      title: about.title || '',
+      subtitle: about.subtitle || '',
+      story: about.story || '',
+      mission: about.mission || '',
+      vision: about.vision || ''
     });
     setSelectedFile(null);
-    setPreviewUrl(slide.photo ? getImageUrl(slide.photo) : '');
+    setPreviewUrl(about.photo ? getImageUrl(about.photo) : '');
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (slideId) => {
-    if (!window.confirm('Are you sure you want to delete this hero slide?')) return;
+  const handleDelete = async (aboutId) => {
+    if (!window.confirm('Are you sure you want to delete this about data?')) return;
 
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`${API_URL}/hero/${slideId}`, {
+      await axios.delete(`${API_URL}/about/${aboutId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchHeroSlides();
+      fetchAboutData();
     } catch (error) {
-      console.error('Error deleting hero slide:', error);
-      setError('Failed to delete hero slide');
-    }
-  };
-
-  const toggleSlideStatus = async (slide) => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      await axios.put(`${API_URL}/hero/${slide._id}`, {
-        isActive: !slide.isActive
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchHeroSlides();
-    } catch (error) {
-      console.error('Error toggling slide status:', error);
-      setError('Failed to update slide status');
+      console.error('Error deleting about data:', error);
+      setError('Failed to delete about data');
     }
   };
 
   const resetForm = () => {
     setFormData({
       title: '',
-      description: '',
-      order: 0
+      subtitle: '',
+      story: '',
+      mission: '',
+      vision: ''
     });
     setSelectedFile(null);
     setPreviewUrl('');
     setFormErrors({});
-    setEditingSlide(null);
+    setEditingAbout(null);
     setIsFormOpen(false);
   };
 
@@ -212,15 +213,15 @@ const HeroSectionAddManage = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hero Section Management</h1>
-          <p className="text-gray-600">Manage your hero section slides and content</p>
+          <h1 className="text-2xl font-bold text-gray-900">About Page Management</h1>
+          <p className="text-gray-600">Manage your PG story, mission, and vision</p>
         </div>
         <button
           onClick={() => setIsFormOpen(true)}
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <FiPlus className="mr-2" />
-          Add Hero Slide
+          {aboutData ? 'Edit About Data' : 'Add About Data'}
         </button>
       </div>
 
@@ -231,55 +232,35 @@ const HeroSectionAddManage = () => {
         </div>
       )}
 
-      {/* Hero Slides List */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {heroSlides.map((slide) => (
-          <div key={slide._id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-            <div className="h-48 bg-gray-100 relative">
-              <img
-                src={getImageUrl(slide.photo)}
-                alt={slide.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.log('Hero Image failed to load:', e.target.src);
-                  e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
-                }}
-                onLoad={() => {
-                  console.log('Hero Image loaded successfully:', getImageUrl(slide.photo));
-                }}
-              />
-              <div className="absolute top-2 right-2">
-                <button
-                  onClick={() => toggleSlideStatus(slide)}
-                  className={`p-2 rounded-full ${
-                    slide.isActive 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-gray-500 text-white'
-                  }`}
-                  title={slide.isActive ? 'Active' : 'Inactive'}
-                >
-                  {slide.isActive ? <FiEye size={16} /> : <FiEyeOff size={16} />}
-                </button>
+      {/* About Data Display */}
+      {aboutData ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Content Information</h3>
+                <div className="space-y-2 text-sm">
+                  <p><strong>Title:</strong> {aboutData.title}</p>
+                  <p><strong>Subtitle:</strong> {aboutData.subtitle}</p>
+                  <p><strong>Story:</strong></p>
+                  <p className="text-gray-600 whitespace-pre-line">{aboutData.story}</p>
+                  <p><strong>Mission:</strong></p>
+                  <p className="text-gray-600">{aboutData.mission}</p>
+                  <p><strong>Vision:</strong></p>
+                  <p className="text-gray-600">{aboutData.vision}</p>
+                </div>
               </div>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{slide.title}</h3>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  Order: {slide.order}
-                </span>
-              </div>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{slide.description}</p>
+              
               <div className="flex space-x-2">
                 <button
-                  onClick={() => handleEdit(slide)}
+                  onClick={() => handleEdit(aboutData)}
                   className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
                 >
                   <FiEdit className="mr-1" size={14} />
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(slide._id)}
+                  onClick={() => handleDelete(aboutData._id)}
                   className="flex-1 flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
                 >
                   <FiTrash2 className="mr-1" size={14} />
@@ -288,21 +269,41 @@ const HeroSectionAddManage = () => {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">About Image</h3>
+              <div className="h-64 bg-gray-100 rounded-lg overflow-hidden">
+                <img
+                  src={getImageUrl(aboutData.photo)}
+                  alt="About"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.log('About Image failed to load:', e.target.src);
+                    e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                  }}
+                  onLoad={() => {
+                    console.log('About Image loaded successfully:', getImageUrl(aboutData.photo));
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Empty State */}
-      {heroSlides.length === 0 && !loading && (
+      {!aboutData && !loading && (
         <div className="text-center py-12">
           <FiImage className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No hero slides yet</h3>
-          <p className="text-gray-600 mb-4">Get started by adding your first hero slide</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No about data yet</h3>
+          <p className="text-gray-600 mb-4">Get started by adding your PG story, mission, and vision</p>
           <button
             onClick={() => setIsFormOpen(true)}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <FiPlus className="mr-2" />
-            Add Hero Slide
+            Add About Data
           </button>
         </div>
       )}
@@ -310,11 +311,11 @@ const HeroSectionAddManage = () => {
       {/* Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
-                  {editingSlide ? 'Edit Hero Slide' : 'Add New Hero Slide'}
+                  {editingAbout ? 'Edit About Data' : 'Add About Data'}
                 </h2>
                 <button
                   onClick={resetForm}
@@ -325,62 +326,108 @@ const HeroSectionAddManage = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.title ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter slide title"
-                  />
-                  {formErrors.title && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>
-                  )}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Title *
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.title ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter title"
+                    />
+                    {formErrors.title && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Subtitle *
+                    </label>
+                    <input
+                      type="text"
+                      name="subtitle"
+                      value={formData.subtitle}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.subtitle ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter subtitle"
+                    />
+                    {formErrors.subtitle && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.subtitle}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description *
+                    Our Story *
                   </label>
                   <textarea
-                    name="description"
-                    value={formData.description}
+                    name="story"
+                    value={formData.story}
                     onChange={handleChange}
-                    rows={3}
+                    rows={4}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.description ? 'border-red-500' : 'border-gray-300'
+                      formErrors.story ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="Enter slide description"
+                    placeholder="Enter your PG story"
                   />
-                  {formErrors.description && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>
+                  {formErrors.story && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.story}</p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Display Order
-                  </label>
-                  <input
-                    type="number"
-                    name="order"
-                    value={formData.order}
-                    onChange={handleChange}
-                    min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter display order (0, 1, 2...)"
-                  />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mission *
+                    </label>
+                    <textarea
+                      name="mission"
+                      value={formData.mission}
+                      onChange={handleChange}
+                      rows={3}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.mission ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter mission"
+                    />
+                    {formErrors.mission && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.mission}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Vision *
+                    </label>
+                    <textarea
+                      name="vision"
+                      value={formData.vision}
+                      onChange={handleChange}
+                      rows={3}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.vision ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter vision"
+                    />
+                    {formErrors.vision && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.vision}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Hero Image {!editingSlide && '*'}
+                    About Image {!editingAbout && '*'}
                   </label>
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 transition-colors">
                     <div className="space-y-1 text-center">
@@ -441,7 +488,7 @@ const HeroSectionAddManage = () => {
                     ) : (
                       <FiSave className="mr-2" />
                     )}
-                    {uploading ? 'Uploading...' : (editingSlide ? 'Update' : 'Save')}
+                    {uploading ? 'Uploading...' : (editingAbout ? 'Update' : 'Save')}
                   </button>
                 </div>
               </form>
@@ -453,4 +500,4 @@ const HeroSectionAddManage = () => {
   );
 };
 
-export default HeroSectionAddManage;
+export default AboutAddAndManage;

@@ -14,12 +14,38 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const servicesRoutes = require('./routes/servicesRoutes');
+const footerRoutes = require('./routes/footerRoutes');
+const aboutRoutes = require('./routes/aboutRoutes');
+const heroRoutes = require('./routes/heroRoutes');
+
 // Use the PORT from environment variables, with a fallback to 5001
 const PORT = process.env.PORT || 5001;
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/services', servicesRoutes);
+app.use('/api/footer', footerRoutes);
+app.use('/api/about', aboutRoutes);
+app.use('/api/hero', heroRoutes);
 
 // A simple test route
 app.get('/', (req, res) => {
     res.send("Hello from backend. API is running...");
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!'
+  });
 });
 
 // Start the server

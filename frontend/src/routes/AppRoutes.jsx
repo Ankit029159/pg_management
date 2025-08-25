@@ -12,6 +12,7 @@ import Services from '../pages/Services'
 import Contact from '../pages/Contact'
 import Bookpg from '../pages/Bookpg'
 import Adminlogin from '../pages/Adminlogin'
+import AdminRegister from '../pages/AdminRegister'
 
 // Admin Pages
 import Dashboard from '../admin/Dashboard'
@@ -25,7 +26,12 @@ import Galleryaddandmanage from '../admin/Galleryaddandmanage'
 import BookingDetails from '../admin/BookingDetails'
 import Paymenthistory from '../admin/Paymenthistory'
 import Herosectionaddmanage from '../admin/Herosectionaddmanage'
-// Note: You will need to import Galleryaddandmanage as well for the 'Galleryaddmanage' route
+import AboutAddAndManage from '../admin/AboutAddAndManage';
+import HeroSectionAddManage from '../admin/HeroSectionAddManage';
+
+// Protected Route Component
+import AdminProtected from '../utils/AdminProtected'
+import FooterAddAndManage from '../admin/Footeraddandmanage'
 
 function AppRoutes() {
   return (
@@ -41,24 +47,24 @@ function AppRoutes() {
                 <Route path='bookingpg' element={<Bookpg />}/>
             </Route>
 
-            {/* 2. Admin Login Route (No Header or Footer) */}
+            {/* 2. Admin Authentication Routes (No Header or Footer) */}
             <Route path='adminlogin' element={<Adminlogin/>}/>
+            <Route path='adminregister' element={<AdminRegister/>}/>
        
-            {/* 3. Admin Panel Routes (uses its own AdminLayout) */}
-            <Route path='admin' element={<AdminLayout/>} >
-                <Route index element={<Dashboard/>}/>
-                <Route path='dashboard' element={<Dashboard/>}/>
-                <Route path='aboutaddmanage' element={<Aboutaddandmanagement/>}/>
-                <Route path='servicesaddmanage' element={<ServicesAddManage/>}/>
-                <Route path='contactmanage' element={<ContactManagement />}/>
-                <Route path='footermangement' element={<Footeraddandmanage/>}/>
-                <Route path='Galleryaddmanage' element={<Galleryaddandmanage/>}/> {/* You might want to change this to the correct component */}
-                <Route path='bookingdetails' element={<BookingDetails />} />
-                <Route path='managerooms' element={<Managerooms/>}/>
-                <Route path='setupbuilding' element={<SetupBuilding/>} />
+            {/* 3. Admin Panel Routes (Protected with AdminProtected) */}
+            <Route path='/admin' element={<AdminProtected><AdminLayout /></AdminProtected>}>
+                <Route path='dashboard' element={<Dashboard />}/>
+                <Route path='aboutaddmanage' element={<AboutAddAndManage />}/>
+                <Route path='herosectionaddmanage' element={<HeroSectionAddManage />}/>
+                <Route path='servicesaddmanage' element={<ServicesAddManage />}/>
+                <Route path='footeraddandmanage' element={<FooterAddAndManage />}/>
+                <Route path='managerooms' element={<Managerooms />}/>
+                <Route path='bookingdetails' element={<BookingDetails />}/>
+                <Route path='contactmanagement' element={<ContactManagement />}/>
+                <Route path='galleryaddandmanage' element={<Galleryaddandmanage />}/>
+                <Route path='setupbuilding' element={<SetupBuilding />}/>
                 <Route path='paymenthistory' element={<Paymenthistory />}/>
-                <Route path='herosectionaddmanage' element={<Herosectionaddmanage/>}/>
-            </Route>
+              </Route>
          </Routes>
     </Router>
   )

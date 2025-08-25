@@ -1,73 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-// --- MOCK DATA: This is what your API would send ---
-// In a real app, you would fetch this from your backend.
-const mockServicesFromAPI = [
-  {
-    _id: '1',
-    title: 'High-Speed Wi-Fi',
-    description: 'Unlimited high-speed internet access is provided for work, study, or entertainment purposes, with 24x7 connectivity across the premises.',
-    imageUrl: 'https://via.placeholder.com/400x250/EBF8FF/3B82F6?text=Wi-Fi', // Replace with your actual image URL
-  },
-  {
-    _id: '2',
-    title: 'Furnished Rooms',
-    description: 'Each room is well-furnished with a bed, study table, chair, wardrobe, and fan. Some rooms also include air conditioning and private balconies.',
-    imageUrl: 'https://via.placeholder.com/400x250/FEF2F2/EF4444?text=Room', // Replace with your actual image URL
-  },
-  {
-    _id: '3',
-    title: '24/7 Security',
-    description: 'Continuous surveillance with CCTV cameras and on-site security personnel to ensure residents\' safety around the clock.',
-    imageUrl: 'https://via.placeholder.com/400x250/ECFDF5/10B981?text=Security', // Replace with your actual image URL
-  },
-  {
-    _id: '4',
-    title: 'Purified Drinking Water',
-    description: 'Clean and safe RO-purified drinking water is available 24/7 for all residents. Regular maintenance ensures the highest hygiene standards.',
-    imageUrl: 'https://via.placeholder.com/400x250/EFF6FF/60A5FA?text=Water', // Replace with your actual image URL
-  },
-  {
-    _id: '5',
-    title: 'Attached Bathrooms with Geyser',
-    description: 'Rooms come with attached private bathrooms equipped with western-style toilets, geysers, and regular water supply.',
-    imageUrl: 'https://via.placeholder.com/400x250/F3F4F6/6B7280?text=Bathroom', // Replace with your actual image URL
-  },
-  {
-    _id: '6',
-    title: 'Laundry & Housekeeping',
-    description: 'Regular housekeeping and laundry services ensure clean rooms and fresh clothes without hassle.',
-    imageUrl: 'https://via.placeholder.com/400x250/F5F3FF/8B5CF6?text=Laundry', // Replace with your actual image URL
-  },
-];
+import axios from 'axios';
 
 function Services() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // This useEffect hook simulates fetching data from your backend API
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5001';
+
+  // Helper function to construct image URL
+  const getImageUrl = (photoPath) => {
+    if (!photoPath) return '';
+    // If the path already starts with http, return as is
+    if (photoPath.startsWith('http')) return photoPath;
+    // If the path starts with /uploads, prepend BASE_URL
+    if (photoPath.startsWith('/uploads')) return `${BASE_URL}${photoPath}`;
+    // Otherwise, assume it's a relative path and prepend BASE_URL/uploads/services/
+    return `${BASE_URL}/uploads/services/${photoPath}`;
+  };
+
+  // Fetch services from backend API
   useEffect(() => {
-    // Simulate a network delay
-    const timer = setTimeout(() => {
-      // In a real application, you would make an API call here, e.g.:
-      // axios.get('/api/services').then(response => {
-      //   setServices(response.data);
-      //   setLoading(false);
-      // });
-      
-      setServices(mockServicesFromAPI);
-      setLoading(false);
-    }, 1000); // 1-second delay to show the loading state
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/services`);
+        console.log('Services API Response:', response.data);
+        console.log('API_URL:', API_URL);
+        console.log('BASE_URL:', BASE_URL);
+        setServices(response.data.data);
+        
+        // Debug: Log photo paths
+        response.data.data.forEach((service, index) => {
+          console.log(`Service ${index + 1} photo path:`, service.photo);
+          console.log(`Service ${index + 1} constructed URL:`, getImageUrl(service.photo));
+        });
+      } catch (error) {
+        console.error('Error fetching services:', error);
+        setError('Failed to load services. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Cleanup function to clear the timer if the component unmounts
-    return () => clearTimeout(timer);
-  }, []); // The empty array [] ensures this effect runs only once
+    fetchServices();
+  }, [API_URL]);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl font-semibold text-gray-700">Loading Services...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="text-xl font-semibold text-gray-700">Loading Services...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="text-red-600 text-xl font-semibold mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -88,47 +91,61 @@ function Services() {
 
       {/* Services Grid */}
       <div className="container mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
-            <div
-              key={service._id}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-            >
-              <img
-                className="w-full h-56 object-cover"
-                src={service.imageUrl}
-                alt={service.title}
-              />
-              <div className="p-8 text-center">
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">
-                  {service.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {service.description}
-                </p>
+        {services.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-500 text-lg mb-4">No services available at the moment.</div>
+            <p className="text-gray-400">Please check back later for updates.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {services.map((service) => (
+              <div
+                key={service._id}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+              >
+                <img
+                  className="w-full h-56 object-cover"
+                  src={getImageUrl(service.photo)}
+                  alt={service.title}
+                  onError={(e) => {
+                    console.log('Image failed to load:', e.target.src);
+                    e.target.src = 'https://via.placeholder.com/400x250/EBF8FF/3B82F6?text=Service+Image';
+                  }}
+                  onLoad={() => {
+                    console.log('Image loaded successfully:', getImageUrl(service.photo));
+                  }}
+                />
+                <div className="p-8 text-center">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                    {service.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {service.description}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Call to Action (CTA) Section */}
       <div className="bg-blue-600">
-          <div className="container mx-auto py-16 px-4 sm:py-20 text-center">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Find Your Perfect Room Today
-            </h2>
-            <p className="mt-4 text-lg leading-6 text-blue-100">
-              Join our community and enjoy a hassle-free stay with all the amenities you need.
-            </p>
-            <Link
-              to="/bookingpg"
-              className="mt-8 w-full inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-md text-base font-medium text-blue-600 bg-white hover:bg-blue-50 sm:w-auto transition-transform transform hover:scale-105"
-            >
-              Book Now
-            </Link>
-          </div>
+        <div className="container mx-auto py-16 px-4 sm:py-20 text-center">
+          <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+            Find Your Perfect Room Today
+          </h2>
+          <p className="mt-4 text-lg leading-6 text-blue-100">
+            Join our community and enjoy a hassle-free stay with all the amenities you need.
+          </p>
+          <Link
+            to="/bookingpg"
+            className="mt-8 w-full inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-md text-base font-medium text-blue-600 bg-white hover:bg-blue-50 sm:w-auto transition-transform transform hover:scale-105"
+          >
+            Book Now
+          </Link>
         </div>
+      </div>
     </div>
   );
 }
