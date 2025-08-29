@@ -5,14 +5,31 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// PhonePe Configuration
+// PhonePe Configuration - Using PRODUCTION environment
 const PHONEPE_CONFIG = {
+  // Production Environment Configuration
   MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || 'M232T7DTC1W58',
   SALT_KEY: process.env.PHONEPE_SALT_KEY || '006c20b2-0a39-423a-9cd3-8e359879dd15',
   SALT_INDEX: process.env.PHONEPE_SALT_INDEX || '1',
   BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api.phonepe.com/apis/hermes',
   CALLBACK_URL: process.env.CALLBACK_URL || 'https://api.pg.gradezy.in/api/payment/callback',
   WEBHOOK_URL: process.env.WEBHOOK_URL || 'https://api.pg.gradezy.in/api/payment/webhook'
+};
+
+// Validate PhonePe configuration
+const validatePhonePeConfig = () => {
+  const requiredFields = ['MERCHANT_ID', 'SALT_KEY', 'SALT_INDEX', 'BASE_URL'];
+  const missingFields = requiredFields.filter(field => !PHONEPE_CONFIG[field]);
+  
+  if (missingFields.length > 0) {
+    throw new Error(`Missing PhonePe configuration: ${missingFields.join(', ')}`);
+  }
+  
+  console.log('PhonePe Configuration:', {
+    MERCHANT_ID: PHONEPE_CONFIG.MERCHANT_ID,
+    BASE_URL: PHONEPE_CONFIG.BASE_URL,
+    SALT_INDEX: PHONEPE_CONFIG.SALT_INDEX
+  });
 };
 
 // Generate PhonePe checksum
@@ -29,6 +46,9 @@ const generateChecksum = (payload) => {
 // @access  Public
 const createPayment = async (req, res) => {
   try {
+    // Validate PhonePe configuration first
+    validatePhonePeConfig();
+    
     const { bookingId, amount, userMobile, userEmail, userName } = req.body;
 
     // Validate required fields
@@ -125,9 +145,23 @@ const createPayment = async (req, res) => {
     // Handle specific error types
     if (error.response) {
       console.error('PhonePe API Error:', error.response.data);
+      console.error('PhonePe API Status:', error.response.status);
+      
+      let errorMessage = 'Payment gateway error: ';
+      
+      if (error.response.status === 404) {
+        errorMessage += 'Invalid merchant configuration or API endpoint. Please check PhonePe credentials.';
+      } else if (error.response.status === 400) {
+        errorMessage += 'Invalid request parameters. Please check the payment data.';
+      } else if (error.response.status === 401) {
+        errorMessage += 'Authentication failed. Please check PhonePe credentials.';
+      } else {
+        errorMessage += error.response.data.message || error.response.data.error || 'Unknown error';
+      }
+      
       return res.status(500).json({
         success: false,
-        message: 'Payment gateway error: ' + (error.response.data.message || 'Unknown error'),
+        message: errorMessage,
         error: error.response.data
       });
     }
