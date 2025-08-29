@@ -10,7 +10,7 @@ function Herosection() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
-  const BASE_URL = 'https://api.pg.gradezy.in'; // Backend server URL
+  const BASE_URL = 'https://api.pg.gradezy.in'; // Fixed base URL
 
   // Helper function to construct image URL
   const getImageUrl = (photoPath) => {
@@ -21,15 +21,22 @@ function Herosection() {
       return '';
     }
     
+    // If it's already a full URL, return as is
     if (photoPath.startsWith('http')) {
       console.log('Photo path is already a full URL:', photoPath);
       return photoPath;
     }
     
-    // For uploaded images, construct the full URL
-    // The photoPath should be something like "photo-1756144241542-7880365.jpg"
+    // If it starts with /uploads, it's already a relative path
+    if (photoPath.startsWith('/uploads')) {
+      const fullUrl = `${BASE_URL}${photoPath}`;
+      console.log('Constructed image URL from /uploads path:', fullUrl);
+      return fullUrl;
+    }
+    
+    // If it's just a filename, construct the full path
     const fullUrl = `${BASE_URL}/uploads/hero/${photoPath}`;
-    console.log('Constructed image URL:', fullUrl);
+    console.log('Constructed image URL from filename:', fullUrl);
     return fullUrl;
   };
 

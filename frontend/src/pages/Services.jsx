@@ -8,16 +8,21 @@ function Services() {
   const [error, setError] = useState('');
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
-  const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://api.pg.gradezy.in';
+  const BASE_URL = 'https://api.pg.gradezy.in'; // Fixed base URL
 
   // Helper function to construct image URL
   const getImageUrl = (photoPath) => {
     if (!photoPath) return '';
-    // If the path already starts with http, return as is
+    
+    // If it's already a full URL, return as is
     if (photoPath.startsWith('http')) return photoPath;
-    // If the path starts with /uploads, prepend BASE_URL
-    if (photoPath.startsWith('/uploads')) return `${BASE_URL}${photoPath}`;
-    // Otherwise, assume it's a relative path and prepend BASE_URL/uploads/services/
+    
+    // If it starts with /uploads, it's already a relative path
+    if (photoPath.startsWith('/uploads')) {
+      return `${BASE_URL}${photoPath}`;
+    }
+    
+    // If it's just a filename, construct the full path
     return `${BASE_URL}/uploads/services/${photoPath}`;
   };
 
