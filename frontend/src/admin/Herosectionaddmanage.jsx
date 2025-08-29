@@ -76,9 +76,9 @@ const Herosectionaddmanage = () => {
         return;
       }
       
-      // Validate file size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setFormErrors(prev => ({ ...prev, photo: 'File size must be less than 5MB' }));
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setFormErrors(prev => ({ ...prev, photo: 'File size must be less than 10MB' }));
         return;
       }
 
@@ -133,10 +133,18 @@ const Herosectionaddmanage = () => {
       fetchHeroSlides();
     } catch (error) {
       console.error('Error saving hero slide:', error);
-      if (error.response?.data?.errors) {
+      
+      // Handle specific error types
+      if (error.response?.status === 413) {
+        setError('File too large. Please upload a smaller image (max 10MB).');
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.response?.data?.errors) {
         setFormErrors(error.response.data.errors);
+      } else if (error.message === 'Network Error') {
+        setError('Network error. Please check your connection and try again.');
       } else {
-        setError('Failed to save hero slide');
+        setError('Failed to save hero slide. Please try again.');
       }
     } finally {
       setUploading(false);
