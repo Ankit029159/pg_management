@@ -25,12 +25,12 @@ router.get('/diagnose', async (req, res) => {
     const crypto = require('crypto');
     const axios = require('axios');
     
-    // PhonePe Configuration
+    // PhonePe Configuration (Test Environment)
     const PHONEPE_CONFIG = {
-      MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || 'M232T7DTC1W58',
-      SALT_KEY: process.env.PHONEPE_SALT_KEY || '006c20b2-0a39-423a-9cd3-8e359879dd15',
+      MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || 'PGTESTPAYUAT',
+      SALT_KEY: process.env.PHONEPE_SALT_KEY || '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399',
       SALT_INDEX: process.env.PHONEPE_SALT_INDEX || '1',
-      BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api.phonepe.com/apis/hermes',
+      BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox',
       CALLBACK_URL: process.env.CALLBACK_URL || 'https://api.pg.gradezy.in/api/payment/callback'
     };
 
@@ -164,12 +164,12 @@ router.get('/test-config', async (req, res) => {
     const crypto = require('crypto');
     const axios = require('axios');
     
-    // PhonePe Configuration
+    // PhonePe Configuration (Test Environment)
     const PHONEPE_CONFIG = {
-      MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || 'M232T7DTC1W58',
-      SALT_KEY: process.env.PHONEPE_SALT_KEY || '006c20b2-0a39-423a-9cd3-8e359879dd15',
+      MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || 'PGTESTPAYUAT',
+      SALT_KEY: process.env.PHONEPE_SALT_KEY || '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399',
       SALT_INDEX: process.env.PHONEPE_SALT_INDEX || '1',
-      BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api.phonepe.com/apis/hermes',
+      BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox',
       CALLBACK_URL: process.env.CALLBACK_URL || 'https://api.pg.gradezy.in/api/payment/callback'
     };
 
