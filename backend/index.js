@@ -59,6 +59,19 @@ app.get('/', (req, res) => {
     res.send("Hello from backend. API is running...");
 });
 
+// Test payment endpoint
+app.get('/api/test', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Backend is working properly',
+        timestamp: new Date().toISOString(),
+        environment: {
+            nodeEnv: process.env.NODE_ENV || 'development',
+            port: process.env.PORT || 5001
+        }
+    });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

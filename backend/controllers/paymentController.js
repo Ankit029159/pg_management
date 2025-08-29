@@ -31,12 +31,28 @@ const createPayment = async (req, res) => {
   try {
     const { bookingId, amount, userMobile, userEmail, userName } = req.body;
 
+    // Validate required fields
+    if (!bookingId || !amount || !userMobile || !userEmail || !userName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: bookingId, amount, userMobile, userEmail, userName'
+      });
+    }
+
     // Validate booking exists
     const booking = await Booking.findById(bookingId);
     if (!booking) {
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
+      });
+    }
+
+    // Check if booking already has a transaction
+    if (booking.transactionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment already initiated for this booking'
       });
     }
 
@@ -47,9 +63,9 @@ const createPayment = async (req, res) => {
     const payload = {
       merchantId: PHONEPE_CONFIG.MERCHANT_ID,
       merchantTransactionId: transactionId,
-      merchantUserId: booking.userId,
-      amount: amount * 100, // Convert to paise
-      redirectUrl: `${req.protocol}://${req.get('host')}/payment-success?bookingId=${bookingId}`,
+      merchantUserId: booking.userId || 'USER_' + Date.now(),
+      amount: Math.round(amount * 100), // Convert to paise and ensure it's an integer
+      redirectUrl: `https://pg.gradezy.in/payment-success?bookingId=${bookingId}`,
       redirectMode: 'POST',
       callbackUrl: PHONEPE_CONFIG.CALLBACK_URL,
       mobileNumber: userMobile,
@@ -58,9 +74,13 @@ const createPayment = async (req, res) => {
       }
     };
 
+    console.log('PhonePe Payload:', payload);
+
     // Generate checksum
     const checksum = generateChecksum(payload);
     const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
+
+    console.log('Generated Checksum:', checksum);
 
     // Make request to PhonePe
     const phonepeResponse = await axios.post(
@@ -72,9 +92,17 @@ const createPayment = async (req, res) => {
         headers: {
           'Content-Type': 'application/json',
           'X-VERIFY': checksum
-        }
+        },
+        timeout: 30000 // 30 second timeout
       }
     );
+
+    console.log('PhonePe Response:', phonepeResponse.data);
+
+    // Validate PhonePe response
+    if (!phonepeResponse.data.success || !phonepeResponse.data.data) {
+      throw new Error('Invalid response from PhonePe: ' + JSON.stringify(phonepeResponse.data));
+    }
 
     // Update booking with transaction details
     booking.transactionId = transactionId;
@@ -93,9 +121,20 @@ const createPayment = async (req, res) => {
 
   } catch (error) {
     console.error('Payment creation error:', error);
+    
+    // Handle specific error types
+    if (error.response) {
+      console.error('PhonePe API Error:', error.response.data);
+      return res.status(500).json({
+        success: false,
+        message: 'Payment gateway error: ' + (error.response.data.message || 'Unknown error'),
+        error: error.response.data
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error creating payment',
+      message: 'Error creating payment: ' + error.message,
       error: error.message
     });
   }
@@ -106,16 +145,28 @@ const createPayment = async (req, res) => {
 // @access  Public
 const paymentCallback = async (req, res) => {
   try {
+    console.log('Payment Callback Received:', req.body);
+    
     const { merchantTransactionId, transactionId, amount, status, paymentInstrument } = req.body;
+
+    if (!merchantTransactionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing merchantTransactionId'
+      });
+    }
 
     // Find booking by transaction ID
     const booking = await Booking.findOne({ transactionId: merchantTransactionId });
     if (!booking) {
+      console.error('Booking not found for transaction:', merchantTransactionId);
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
       });
     }
+
+    console.log('Processing payment for booking:', booking._id, 'Status:', status);
 
     // Update booking status
     if (status === 'PAYMENT_SUCCESS') {
@@ -133,6 +184,7 @@ const paymentCallback = async (req, res) => {
     }
 
     await booking.save();
+    console.log('Booking updated successfully');
 
     res.status(200).json({
       success: true,
@@ -169,7 +221,7 @@ const generateReceipt = async (req, res) => {
 
     // Create PDF
     const doc = new PDFDocument();
-    const filename = `receipt_${booking.bookingId}_${Date.now()}.pdf`;
+    const filename = `receipt_${booking.bookingId || booking._id}_${Date.now()}.pdf`;
     const filepath = path.join(__dirname, '../uploads/receipts', filename);
 
     // Ensure receipts directory exists
@@ -185,7 +237,7 @@ const generateReceipt = async (req, res) => {
     doc.fontSize(24).text('PG Booking Receipt', { align: 'center' });
     doc.moveDown();
 
-    doc.fontSize(12).text(`Receipt No: ${booking.bookingId}`);
+    doc.fontSize(12).text(`Receipt No: ${booking.bookingId || booking._id}`);
     doc.text(`Date: ${new Date(booking.createdAt).toLocaleDateString()}`);
     doc.text(`Time: ${new Date(booking.createdAt).toLocaleTimeString()}`);
     doc.moveDown();
@@ -263,7 +315,7 @@ const getPaymentStatus = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        bookingId: booking.bookingId,
+        bookingId: booking._id,
         paymentStatus: booking.paymentStatus,
         bookingStatus: booking.status,
         amount: booking.amount,

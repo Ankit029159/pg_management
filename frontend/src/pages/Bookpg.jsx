@@ -138,6 +138,7 @@ function Bookpg() {
 
     try {
       setLoading(true);
+      setMessage('Creating booking...');
 
       const bookingData = {
         userId: `U${Date.now()}`,
@@ -154,7 +155,11 @@ function Bookpg() {
         amount: selectedBed.price
       };
 
+      console.log('Booking data being sent:', bookingData);
+
       const response = await axios.post(`${API_BASE_URL}/bookings/create`, bookingData);
+      
+      console.log('Booking response:', response.data);
       
       if (response.data.success) {
         setCurrentBooking(response.data.data);
@@ -165,7 +170,24 @@ function Bookpg() {
       }
     } catch (error) {
       console.error('Error creating booking:', error);
-      setMessage('Error creating booking: ' + (error.response?.data?.message || error.message));
+      
+      let errorMessage = 'Error creating booking: ';
+      
+      if (error.response) {
+        // Server responded with error status
+        console.error('Server error response:', error.response.data);
+        errorMessage += error.response.data.message || error.response.data.error || 'Server error';
+      } else if (error.request) {
+        // Request was made but no response received
+        console.error('No response received:', error.request);
+        errorMessage += 'No response from server. Please check your connection.';
+      } else {
+        // Something else happened
+        console.error('Error setting up request:', error.message);
+        errorMessage += error.message;
+      }
+      
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -174,6 +196,7 @@ function Bookpg() {
   const initiatePayment = async (bookingId) => {
     try {
       setPaymentLoading(true);
+      setMessage('Initiating payment...');
       
       const paymentData = {
         bookingId: bookingId,
@@ -183,9 +206,14 @@ function Bookpg() {
         userName: userForm.fullName
       };
 
+      console.log('Payment data being sent:', paymentData);
+
       const response = await axios.post(`${API_BASE_URL}/payment/create`, paymentData);
       
+      console.log('Payment response:', response.data);
+      
       if (response.data.success) {
+        setMessage('Payment initiated successfully! Redirecting to payment gateway...');
         // Redirect to PhonePe payment page
         window.location.href = response.data.data.redirectUrl;
       } else {
@@ -194,7 +222,24 @@ function Bookpg() {
       
     } catch (error) {
       console.error('Payment initiation error:', error);
-      setMessage('Payment initiation failed: ' + (error.response?.data?.message || error.message));
+      
+      let errorMessage = 'Payment initiation failed: ';
+      
+      if (error.response) {
+        // Server responded with error status
+        console.error('Server error response:', error.response.data);
+        errorMessage += error.response.data.message || error.response.data.error || 'Server error';
+      } else if (error.request) {
+        // Request was made but no response received
+        console.error('No response received:', error.request);
+        errorMessage += 'No response from server. Please check your connection.';
+      } else {
+        // Something else happened
+        console.error('Error setting up request:', error.message);
+        errorMessage += error.message;
+      }
+      
+      setMessage(errorMessage);
     } finally {
       setPaymentLoading(false);
     }
