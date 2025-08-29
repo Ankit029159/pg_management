@@ -9,8 +9,8 @@ function Herosection() {
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  const BASE_URL = 'http://localhost:5001'; // Backend server URL
+  const API_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
+  const BASE_URL = 'https://api.pg.gradezy.in'; // Backend server URL
 
   // Helper function to construct image URL
   const getImageUrl = (photoPath) => {

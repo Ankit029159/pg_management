@@ -63,7 +63,7 @@ const AdminLayout = () => {
       const token = localStorage.getItem('adminToken');
       if (token) {
         // Call logout API
-        await fetch('http://localhost:5001/api/auth/logout', {
+        await fetch('https://api.pg.gradezy.in/api/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

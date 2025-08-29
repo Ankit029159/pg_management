@@ -9,7 +9,7 @@ function BookingDetails() {
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const API_BASE_URL = 'http://localhost:5001/api';
+  const API_BASE_URL = 'https://api.pg.gradezy.in/api';
 
   useEffect(() => {
     fetchBookings();

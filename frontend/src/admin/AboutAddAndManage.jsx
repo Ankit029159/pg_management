@@ -20,8 +20,8 @@ const AboutAddAndManage = () => {
   const [formErrors, setFormErrors] = useState({});
   const [uploading, setUploading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5001';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
+  const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://api.pg.gradezy.in';
 
   // Helper function to construct image URL
   const getImageUrl = (photoPath) => {

@@ -36,7 +36,7 @@ function Managerooms() {
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [selectedFloor, setSelectedFloor] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:5001/api';
+  const API_BASE_URL = 'https://api.pg.gradezy.in/api';
 
   useEffect(() => {
     fetchRooms();
