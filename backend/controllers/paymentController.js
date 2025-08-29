@@ -111,7 +111,8 @@ const createPayment = async (req, res) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-VERIFY': checksum
+          'X-VERIFY': checksum,
+          'X-MERCHANT-ID': PHONEPE_CONFIG.MERCHANT_ID
         },
         timeout: 30000 // 30 second timeout
       }
