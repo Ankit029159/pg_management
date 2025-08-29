@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiImage, FiUpload, FiEye, FiEyeOff } from 'react-icons/fi';
 import axios from 'axios';
 
-const HeroSectionAddManage = () => {
+const Herosectionaddmanage = () => {
   const [heroSlides, setHeroSlides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -453,4 +453,4 @@ const HeroSectionAddManage = () => {
   );
 };
 
-export default HeroSectionAddManage;
+export default Herosectionaddmanage;

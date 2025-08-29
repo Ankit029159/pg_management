@@ -17,7 +17,7 @@ import PaymentSuccess from '../pages/PaymentSuccess';
 
 // Admin Pages
 import Dashboard from '../admin/Dashboard'
-import Aboutaddandmanagement from '../admin/Aboutaddandmanagement'
+
 import ServicesAddManage from '../admin/ServicesAddManage'
 import ContactManagement from '../admin/ContactManagement'
 import Footeraddandmanage from '../admin/Footeraddandmanage'
@@ -28,11 +28,10 @@ import BookingDetails from '../admin/BookingDetails'
 import Paymenthistory from '../admin/Paymenthistory'
 import Herosectionaddmanage from '../admin/Herosectionaddmanage'
 import AboutAddAndManage from '../admin/AboutAddAndManage';
-import HeroSectionAddManage from '../admin/HeroSectionAddManage';
 
 // Protected Route Component
 import AdminProtected from '../utils/AdminProtected'
-import FooterAddAndManage from '../admin/Footeraddandmanage'
+
 
 function AppRoutes() {
   return (
@@ -57,9 +56,9 @@ function AppRoutes() {
             <Route path='/admin' element={<AdminProtected><AdminLayout /></AdminProtected>}>
                 <Route path='dashboard' element={<Dashboard />}/>
                 <Route path='aboutaddmanage' element={<AboutAddAndManage />}/>
-                <Route path='herosectionaddmanage' element={<HeroSectionAddManage />}/>
+                <Route path='herosectionaddmanage' element={<Herosectionaddmanage />}/>
                 <Route path='servicesaddmanage' element={<ServicesAddManage />}/>
-                <Route path='footeraddandmanage' element={<FooterAddAndManage />}/>
+                <Route path='footeraddandmanage' element={<Footeraddandmanage />}/>
                 <Route path='managerooms' element={<Managerooms />}/>
                 <Route path='bookingdetails' element={<BookingDetails />}/>
                 <Route path='contactmanagement' element={<ContactManagement />}/>

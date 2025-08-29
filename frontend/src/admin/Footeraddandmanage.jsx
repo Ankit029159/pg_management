@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiPhone, FiMail, FiClock } from 'react-icons/fi';
 import axios from 'axios';
 
-const FooterAddAndManage = () => {
+const Footeraddandmanage = () => {
   const [footerData, setFooterData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -377,4 +377,4 @@ const FooterAddAndManage = () => {
   );
 };
 
-export default FooterAddAndManage;
+export default Footeraddandmanage;
