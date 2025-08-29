@@ -23,6 +23,12 @@ const servicesRoutes = require('./routes/servicesRoutes');
 const footerRoutes = require('./routes/footerRoutes');
 const aboutRoutes = require('./routes/aboutRoutes');
 const heroRoutes = require('./routes/heroRoutes');
+const buildingRoutes = require('./routes/buildingRoutes');
+const floorRoutes = require('./routes/floorRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const bedRoutes = require('./routes/bedRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // Use the PORT from environment variables, with a fallback to 5001
 const PORT = process.env.PORT || 5001;
@@ -33,6 +39,12 @@ app.use('/api/services', servicesRoutes);
 app.use('/api/footer', footerRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/hero', heroRoutes);
+app.use('/api/buildings', buildingRoutes);
+app.use('/api/floors', floorRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/beds', bedRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // A simple test route
 app.get('/', (req, res) => {

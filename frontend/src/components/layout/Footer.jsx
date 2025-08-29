@@ -195,19 +195,7 @@ function Footer() {
             </div>
             
             {/* Newsletter Signup */}
-            <div className="mt-6">
-              <h5 className="text-sm font-semibold text-white mb-3">Stay Updated</h5>
-              <div className="flex">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-l-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                />
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-r-lg transition-colors duration-200">
-                  Subscribe
-                </button>
-              </div>
-            </div>
+            
           </div>
         </div>
 

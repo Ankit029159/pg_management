@@ -12,14 +12,15 @@ const navItems = [
   { path: 'dashboard', icon: <FiGrid size={20} />, name: 'Dashboard', color: 'from-blue-500 to-blue-600' },
   { path: 'setupbuilding', icon: <FiHome size={20} />, name: 'Setup Building', color: 'from-green-500 to-green-600' },
   { path: 'managerooms', icon: <FiUsers size={20} />, name: 'Manage Rooms', color: 'from-purple-500 to-purple-600' },
+   { path: 'bookingdetails', icon: <FiCreditCard size={20} />, name: 'Booking Details', color: 'from-orange-500 to-orange-600' },
+  { path: 'paymenthistory', icon: <FiDollarSign size={20} />, name: 'Payment History', color: 'from-emerald-500 to-emerald-600' },
   { path: 'aboutaddmanage', icon: <FiFileText size={20} />, name: 'About Page', color: 'from-indigo-500 to-indigo-600' },
   { path: 'herosectionaddmanage', icon: <FiImage size={20} />, name: 'Hero Section', color: 'from-pink-500 to-pink-600' },
   { path: 'servicesaddmanage', icon: <FiSettings size={20} />, name: 'Services Page', color: 'from-yellow-500 to-yellow-600' },
   { path: 'galleryaddandmanage', icon: <FiCamera size={20} />, name: 'Gallery', color: 'from-red-500 to-red-600' },
   { path: 'contactmanagement', icon: <FiMessageSquare size={20} />, name: 'Contact Queries', color: 'from-teal-500 to-teal-600' },
   { path: 'footeraddandmanage', icon: <FiFileText size={20} />, name: 'Footer Management', color: 'from-cyan-500 to-cyan-600' },
-  { path: 'bookingdetails', icon: <FiCreditCard size={20} />, name: 'Booking Details', color: 'from-orange-500 to-orange-600' },
-  { path: 'paymenthistory', icon: <FiDollarSign size={20} />, name: 'Payment History', color: 'from-emerald-500 to-emerald-600' },
+ 
 ];
 
 const AdminLayout = () => {

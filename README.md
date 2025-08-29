@@ -1,51 +1,137 @@
-# PG Management System - Admin Authentication
+# PG Booking Management System
 
-A complete PG (Pay Guest) management system with professional admin authentication and authorization.
+A comprehensive PG (Paying Guest) booking management system similar to BookMyShow, built with React frontend and Node.js backend with MongoDB database.
 
 ## Features
 
-### Admin Authentication System
-- **Secure Registration**: Admin registration with all required fields
-- **JWT Authentication**: Secure token-based authentication
-- **Protected Routes**: Admin pages are protected with authentication middleware
-- **Professional UI**: Modern, responsive design with Tailwind CSS
-- **Form Validation**: Client-side and server-side validation
-- **Password Security**: Bcrypt hashing for password security
+### Admin Features
+1. **Building Management**
+   - Add new buildings with name, address, and number of floors
+   - Auto-generate floors based on the specified number
+   - Manage existing buildings (edit/delete)
+   - View all buildings in a table format
 
-### Admin Registration Fields
-- PG Name
-- Admin Person Name
-- Mobile Number (10-digit validation)
-- Email ID
-- Complete Address
-- Aadhar Card Number (12-digit validation)
-- Password (with strength requirements)
-- Confirm Password
+2. **Floor Management**
+   - View all floors across buildings
+   - Edit floor details
+   - Auto-generated floors when building is created
 
-### Admin Login
-- Email and Password authentication
-- JWT token generation
-- Automatic redirect to admin dashboard
-- Session management
+3. **Room Management**
+   - Add rooms to specific buildings and floors
+   - Select room type (Bedroom/Hall)
+   - Set number of beds and pricing
+   - Auto-generate beds when room is created
+   - Manage existing rooms (edit/delete)
 
-## Tech Stack
+4. **Bed Management**
+   - View all beds with their status
+   - Auto-generated bed IDs (e.g., R101-B1, R101-B2)
+   - Track bed availability and occupancy
+   - Assign/release beds
 
-### Backend
-- **Node.js** with Express.js
-- **MongoDB** with Mongoose ODM
-- **JWT** for authentication
-- **Bcryptjs** for password hashing
-- **Express-validator** for input validation
-- **CORS** for cross-origin requests
+5. **Booking Management**
+   - View all bookings from users
+   - Accept/reject pending bookings
+   - Cancel active bookings
+   - Extend booking durations
+   - Track payment status
 
-### Frontend
-- **React.js** with Vite
-- **React Router** for navigation
-- **Tailwind CSS** for styling
-- **React Icons** for icons
-- **Local Storage** for token management
+### User Features
+1. **Booking System**
+   - No login required (similar to BookMyShow)
+   - Select building, floor, room, and bed
+   - View available beds with pricing
+   - Book beds with check-in dates
+   - Receive booking confirmation with booking ID
 
-## Setup Instructions
+## System Architecture
+
+### Backend (Node.js + Express + MongoDB)
+- **Models**: Building, Floor, Room, Bed, Booking
+- **Controllers**: CRUD operations for all entities
+- **Routes**: RESTful API endpoints
+- **Database**: MongoDB with Mongoose ODM
+
+### Frontend (React + Tailwind CSS)
+- **Admin Pages**: SetupBuilding, Managerooms, BookingDetails
+- **User Pages**: Bookpg (booking form)
+- **Responsive Design**: Mobile-friendly interface
+
+## Database Schema
+
+### Building
+- Building ID (auto-generated: B001, B002, etc.)
+- Name, Address, Number of Floors
+- Created/Updated timestamps
+
+### Floor
+- Floor Number, Building Reference
+- Building Name, Total Rooms
+- Auto-generated when building is created
+
+### Room
+- Room ID (auto-generated: R101, R102, etc.)
+- Building, Floor references
+- Room Type (Bedroom/Hall)
+- Total Beds, Available Beds, Rate
+- Rate Type (per bed/per room)
+
+### Bed
+- Bed ID (auto-generated: R101-B1, R101-B2, etc.)
+- Room reference, Bed Number
+- Status (Available/Occupied/Maintenance)
+- Price, User assignment
+- Auto-generated when room is created
+
+### Booking
+- Booking ID (auto-generated: BK001, BK002, etc.)
+- User details (name, ID)
+- Bed, Room, Building references
+- Check-in/Check-out dates
+- Status, Payment status
+- Admin actions (accept/reject)
+
+## API Endpoints
+
+### Buildings
+- `POST /api/buildings/add` - Add new building
+- `GET /api/buildings/all` - Get all buildings
+- `GET /api/buildings/:id` - Get building by ID
+- `PUT /api/buildings/:id` - Update building
+- `DELETE /api/buildings/:id` - Delete building
+
+### Floors
+- `GET /api/floors/all` - Get all floors
+- `GET /api/floors/building/:buildingId` - Get floors by building
+- `PUT /api/floors/:id` - Update floor
+- `DELETE /api/floors/:id` - Delete floor
+
+### Rooms
+- `POST /api/rooms/add` - Add new room
+- `GET /api/rooms/all` - Get all rooms
+- `GET /api/rooms/building/:buildingId/floor/:floorId` - Get rooms by building and floor
+- `PUT /api/rooms/:id` - Update room
+- `DELETE /api/rooms/:id` - Delete room
+
+### Beds
+- `GET /api/beds/all` - Get all beds
+- `GET /api/beds/room/:roomId` - Get beds by room
+- `GET /api/beds/available` - Get available beds
+- `PUT /api/beds/:id` - Update bed
+- `PUT /api/beds/:id/assign` - Assign bed to user
+- `PUT /api/beds/:id/release` - Release bed
+
+### Bookings
+- `POST /api/bookings/create` - Create new booking
+- `GET /api/bookings/all` - Get all bookings (admin)
+- `GET /api/bookings/user/:userId` - Get user bookings
+- `GET /api/bookings/:id` - Get booking by ID
+- `PUT /api/bookings/:id/status` - Update booking status
+- `PUT /api/bookings/:id/payment` - Update payment status
+- `PUT /api/bookings/:id/cancel` - Cancel booking
+- `PUT /api/bookings/:id/extend` - Extend booking
+
+## Installation & Setup
 
 ### Prerequisites
 - Node.js (v14 or higher)
@@ -53,170 +139,64 @@ A complete PG (Pay Guest) management system with professional admin authenticati
 - npm or yarn
 
 ### Backend Setup
-
-1. **Navigate to backend directory:**
-   ```bash
-   cd backend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Create environment file:**
-   Create a `.env` file in the backend directory with the following variables:
-   ```env
-   PORT=5001
-   MONGODB_URI=mongodb://localhost:27017/pg_management
-   JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_secure_2024
-   NODE_ENV=development
-   ```
-
-4. **Start the backend server:**
-   ```bash
-   npm run dev
-   ```
+```bash
+cd backend
+npm install
+# Set up environment variables (optional)
+# MONGODB_URI=mongodb://localhost:27017/pg_management
+npm run dev
+```
 
 ### Frontend Setup
-
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start the frontend development server:**
-   ```bash
-   npm run dev
-   ```
-
-## API Endpoints
-
-### Authentication Routes
-- `POST /api/auth/register` - Admin registration
-- `POST /api/auth/login` - Admin login
-- `GET /api/auth/profile` - Get admin profile (protected)
-- `POST /api/auth/logout` - Admin logout (protected)
-
-### Request/Response Examples
-
-#### Register Admin
-```json
-POST /api/auth/register
-{
-  "pgName": "Sunshine PG",
-  "adminName": "John Doe",
-  "mobileNumber": "9876543210",
-  "email": "admin@sunshinepg.com",
-  "address": "123 Main Street, City, State - 123456",
-  "aadharCard": "123456789012",
-  "password": "Admin123",
-  "confirmPassword": "Admin123"
-}
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-#### Login Admin
-```json
-POST /api/auth/login
-{
-  "email": "admin@sunshinepg.com",
-  "password": "Admin123"
-}
-```
+### Database Setup
+1. Ensure MongoDB is running
+2. The application will automatically create collections and indexes
+3. Start with adding buildings through the admin interface
 
-## File Structure
+## Usage Flow
 
-```
-Final_pg/
-├── backend/
-│   ├── controllers/
-│   │   └── authController.js
-│   ├── middlewares/
-│   │   ├── auth.js
-│   │   └── validation.js
-│   ├── models/
-│   │   └── Admin.js
-│   ├── routes/
-│   │   └── auth.js
-│   ├── db/
-│   │   └── dbconnection.js
-│   ├── index.js
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Adminlogin.jsx
-│   │   │   └── AdminRegister.jsx
-│   │   ├── components/layout/
-│   │   │   └── AdminLayout.jsx
-│   │   ├── utils/
-│   │   │   └── AdminProtected.js
-│   │   └── routes/
-│   │       └── AppRoutes.jsx
-│   └── package.json
-└── README.md
-```
+### Admin Setup
+1. **Setup Building**: Add buildings and floors
+2. **Manage Rooms**: Add rooms and beds
+3. **View Bookings**: Monitor and manage user bookings
 
-## Security Features
+### User Booking
+1. **Select Building**: Choose from available buildings
+2. **Select Floor**: Choose floor within building
+3. **Select Room**: Choose room type and see pricing
+4. **Select Bed**: Choose available bed
+5. **Enter Details**: Name and check-in date
+6. **Confirm Booking**: Receive booking ID
 
-1. **Password Hashing**: All passwords are hashed using bcrypt with salt rounds of 12
-2. **JWT Tokens**: Secure token-based authentication with 7-day expiration
-3. **Input Validation**: Both client-side and server-side validation
-4. **Protected Routes**: Admin pages require valid authentication
-5. **Token Verification**: Automatic token verification on protected routes
-6. **Secure Headers**: CORS and other security headers implemented
+## Key Features
 
-## Usage
+- **Auto-generation**: Building IDs, Floor numbers, Room IDs, Bed IDs, Booking IDs
+- **Cascading Updates**: When building is deleted, all related floors are deleted
+- **Real-time Availability**: Bed availability updates automatically
+- **No User Registration**: Simple booking without login (like BookMyShow)
+- **Admin Controls**: Full control over bookings, rooms, and buildings
+- **Responsive Design**: Works on desktop and mobile devices
 
-1. **Register as Admin**: Visit `/adminregister` to create a new admin account
-2. **Login**: Visit `/adminlogin` to sign in with email and password
-3. **Access Admin Panel**: After successful login, you'll be redirected to `/admin/dashboard`
-4. **Logout**: Use the logout button in the admin panel to sign out
+## Technologies Used
 
-## Admin Panel Features
+- **Frontend**: React, Tailwind CSS, Axios
+- **Backend**: Node.js, Express, MongoDB, Mongoose
+- **Development**: Vite, Nodemon
+- **Styling**: Tailwind CSS with responsive design
 
-- **Dashboard**: Overview of PG management
-- **Setup Building**: Configure building details
-- **Manage Rooms**: Room management functionality
-- **About Page Management**: Manage about page content
-- **Hero Section Management**: Manage hero section content
-- **Services Management**: Manage services offered
-- **Gallery Management**: Manage photo gallery
-- **Contact Management**: Handle contact queries
-- **Booking Details**: View and manage bookings
-- **Payment History**: Track payment records
+## Future Enhancements
 
-## Error Handling
-
-The system includes comprehensive error handling for:
-- Invalid credentials
-- Duplicate email/mobile/aadhar
-- Token expiration
-- Network errors
-- Validation errors
-- Server errors
-
-## Development
-
-### Adding New Admin Features
-1. Create new routes in `backend/routes/`
-2. Add controllers in `backend/controllers/`
-3. Create models if needed in `backend/models/`
-4. Add frontend components in `frontend/src/`
-5. Update routes in `frontend/src/routes/AppRoutes.jsx`
-
-### Environment Variables
-Make sure to set up proper environment variables for production:
-- Use a strong JWT secret
-- Configure production MongoDB URI
-- Set appropriate CORS origins
-- Enable HTTPS in production
-
-## Support
-
-For any issues or questions, please check the console logs for detailed error messages and ensure all dependencies are properly installed.
+- Payment gateway integration
+- Email notifications
+- User dashboard for booking history
+- Room/bed images
+- Advanced search and filtering
+- Booking calendar view
+- Maintenance scheduling
+- Reports and analytics

@@ -13,6 +13,7 @@ import Contact from '../pages/Contact'
 import Bookpg from '../pages/Bookpg'
 import Adminlogin from '../pages/Adminlogin'
 import AdminRegister from '../pages/AdminRegister'
+import PaymentSuccess from '../pages/PaymentSuccess';
 
 // Admin Pages
 import Dashboard from '../admin/Dashboard'
@@ -45,6 +46,7 @@ function AppRoutes() {
                 <Route path='services' element={<Services />}/>
                 <Route path='contact' element={<Contact />}/>
                 <Route path='bookingpg' element={<Bookpg />}/>
+                <Route path='payment-success' element={<PaymentSuccess />}/>
             </Route>
 
             {/* 2. Admin Authentication Routes (No Header or Footer) */}
