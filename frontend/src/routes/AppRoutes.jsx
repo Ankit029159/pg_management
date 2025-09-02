@@ -17,7 +17,6 @@ import PaymentSuccess from '../pages/PaymentSuccess';
 
 // Admin Pages
 import Dashboard from '../admin/Dashboard'
-
 import ServicesAddManage from '../admin/ServicesAddManage'
 import ContactManagement from '../admin/ContactManagement'
 import Footeraddandmanage from '../admin/Footeraddandmanage'
@@ -58,11 +57,11 @@ function AppRoutes() {
                 <Route path='aboutaddmanage' element={<AboutAddAndManage />}/>
                 <Route path='herosectionaddmanage' element={<Herosectionaddmanage />}/>
                 <Route path='servicesaddmanage' element={<ServicesAddManage />}/>
+                <Route path='galleryaddandmanage' element={<Galleryaddandmanage />}/>
                 <Route path='footeraddandmanage' element={<Footeraddandmanage />}/>
                 <Route path='managerooms' element={<Managerooms />}/>
                 <Route path='bookingdetails' element={<BookingDetails />}/>
                 <Route path='contactmanagement' element={<ContactManagement />}/>
-                <Route path='galleryaddandmanage' element={<Galleryaddandmanage />}/>
                 <Route path='setupbuilding' element={<SetupBuilding />}/>
                 <Route path='paymenthistory' element={<Paymenthistory />}/>
               </Route>

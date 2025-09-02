@@ -30,8 +30,28 @@ const createBooking = async (req, res) => {
       });
     }
 
+    // Generate a unique bookingId
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substr(2, 6);
+    let uniqueBookingId = `BK${timestamp}${randomSuffix}`;
+    
+    console.log('🔑 Generated bookingId:', uniqueBookingId);
+
+    // Double-check that the generated bookingId is unique
+    const existingBooking = await Booking.findOne({ bookingId: uniqueBookingId });
+    if (existingBooking) {
+      // If somehow we got a duplicate, generate a new one
+      const newTimestamp = Date.now();
+      const newRandomSuffix = Math.random().toString(36).substr(2, 6);
+      const newUniqueBookingId = `BK${newTimestamp}${newRandomSuffix}`;
+      
+      console.log(`⚠️ Generated duplicate bookingId ${uniqueBookingId}, using new one: ${newUniqueBookingId}`);
+      uniqueBookingId = newUniqueBookingId;
+    }
+
     // Create booking
     const booking = new Booking({
+      bookingId: uniqueBookingId, // Set the unique bookingId explicitly
       userId,
       userName,
       userMobile,
@@ -47,6 +67,7 @@ const createBooking = async (req, res) => {
     });
 
     await booking.save();
+    console.log('✅ Booking saved successfully with bookingId:', booking.bookingId);
 
     // Update bed status
     bed.status = 'Occupied';

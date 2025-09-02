@@ -1,51 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function PaymentSuccess() {
   const [searchParams] = useSearchParams();
-  const [booking, setBooking] = useState(null);
+  const navigate = useNavigate();
+  const [paymentStatus, setPaymentStatus] = useState('processing');
+  const [bookingDetails, setBookingDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState(null);
 
   const API_BASE_URL = 'https://api.pg.gradezy.in/api';
-  const bookingId = searchParams.get('bookingId');
 
   useEffect(() => {
-    if (bookingId) {
-      checkPaymentStatus();
-    }
-  }, [bookingId]);
-
-  const checkPaymentStatus = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/bookings/${bookingId}`);
-      
-      if (response.data.success) {
-        setBooking(response.data.data);
+    const processPayment = async () => {
+      try {
+        setLoading(true);
         
-        if (response.data.data.paymentStatus === 'Paid') {
-          setMessage('Payment successful! Your booking is confirmed.');
-          // Auto-download receipt
-          await downloadReceipt(bookingId);
-        } else if (response.data.data.paymentStatus === 'Failed') {
-          setMessage('Payment failed. Please try again.');
-        } else {
-          setMessage('Payment is pending. Please wait for confirmation.');
-        }
-      }
-    } catch (error) {
-      console.error('Error checking payment status:', error);
-      setMessage('Error checking payment status');
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Get parameters from URL
+        const bookingId = searchParams.get('bookingId');
+        const transactionId = searchParams.get('merchantTransactionId');
+        const status = searchParams.get('status');
+        const amount = searchParams.get('amount');
+        
+        console.log('Payment callback parameters:', { bookingId, transactionId, status, amount });
 
-  const downloadReceipt = async (bookingId) => {
+        if (!bookingId) {
+          setError('No booking ID found in payment response');
+          setLoading(false);
+          return;
+        }
+
+        // Check payment status
+        if (status === 'PAYMENT_SUCCESS') {
+          setPaymentStatus('success');
+          
+          // Fetch updated booking details
+          try {
+            const response = await axios.get(`${API_BASE_URL}/bookings/${bookingId}`);
+            if (response.data.success) {
+              setBookingDetails(response.data.data);
+            }
+          } catch (err) {
+            console.error('Error fetching booking details:', err);
+          }
+        } else if (status === 'PAYMENT_ERROR' || status === 'PAYMENT_DECLINED') {
+          setPaymentStatus('failed');
+        } else {
+          setPaymentStatus('pending');
+        }
+
+      } catch (err) {
+        console.error('Error processing payment:', err);
+        setError('Error processing payment response');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    processPayment();
+  }, [searchParams]);
+
+  const downloadReceipt = async () => {
+    if (!bookingDetails?._id) return;
+    
     try {
-      const response = await axios.get(`${API_BASE_URL}/payment/receipt/${bookingId}`, {
+      const response = await axios.get(`${API_BASE_URL}/payment/receipt/${bookingDetails._id}`, {
         responseType: 'blob'
       });
       
@@ -53,7 +73,7 @@ function PaymentSuccess() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `receipt_${bookingId}.pdf`);
+      link.setAttribute('download', `receipt_${bookingDetails._id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -61,124 +81,233 @@ function PaymentSuccess() {
       
     } catch (error) {
       console.error('Receipt download error:', error);
-      setMessage('Error downloading receipt');
+      alert('Error downloading receipt');
     }
+  };
+
+  const checkPaymentStatus = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get parameters from URL
+      const bookingId = searchParams.get('bookingId');
+      const transactionId = searchParams.get('transactionId');
+      
+      if (!bookingId) {
+        setError('No booking ID found');
+        return;
+      }
+      
+      console.log('Checking payment status for booking:', bookingId);
+      
+      // Check payment status from backend with PhonePe status check
+      const response = await axios.get(`${API_BASE_URL}/pg-payment/details/${transactionId}?checkPhonePe=true`);
+      
+      if (response.data.success) {
+        const paymentRecord = response.data.data;
+        console.log('Payment status updated:', paymentRecord.paymentStatus);
+        
+        // Update payment status based on backend response
+        console.log('🔍 Payment status from backend:', paymentRecord.paymentStatus);
+        console.log('🔍 Current frontend status:', paymentStatus);
+        
+        if (paymentRecord.paymentStatus === 'SUCCESS') {
+          console.log('✅ Setting status to SUCCESS');
+          setPaymentStatus('success');
+          // Fetch updated booking details
+          try {
+            const bookingResponse = await axios.get(`${API_BASE_URL}/bookings/${bookingId}`);
+            if (bookingResponse.data.success) {
+              setBookingDetails(bookingResponse.data.data);
+            }
+          } catch (err) {
+            console.error('Error fetching booking details:', err);
+          }
+        } else if (paymentRecord.paymentStatus === 'FAILED') {
+          console.log('❌ Setting status to FAILED');
+          setPaymentStatus('failed');
+        } else if (paymentRecord.paymentStatus === 'PENDING') {
+          console.log('⏳ Setting status to PENDING');
+          setPaymentStatus('pending');
+          // Show a message that payment is still pending
+          alert('Payment is still pending. Please wait for PhonePe to process your payment or try again later.');
+        }
+        
+        // Also update booking details if available
+        if (paymentRecord.pgDetails) {
+          setBookingDetails({
+            _id: paymentRecord.bookingId,
+            bookingId: paymentRecord.bookingId,
+            amount: paymentRecord.amount,
+            status: paymentRecord.paymentStatus,
+            pgDetails: paymentRecord.pgDetails,
+            checkInDate: paymentRecord.checkInDate,
+            checkOutDate: paymentRecord.checkOutDate
+          });
+        }
+        
+      } else {
+        setError('Failed to check payment status');
+      }
+      
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      setError('Error checking payment status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const goToHome = () => {
+    navigate('/');
+  };
+
+  const goToBookings = () => {
+    navigate('/bookingpg');
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Processing payment...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            {booking?.paymentStatus === 'Paid' ? (
-              <div className="text-green-600 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-            ) : (
-              <div className="text-yellow-600 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-            )}
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {booking?.paymentStatus === 'Paid' ? 'Payment Successful!' : 'Payment Processing'}
-            </h1>
-            <p className="text-gray-600">{message}</p>
-          </div>
-
-          {booking && (
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Booking Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Booking ID</p>
-                  <p className="font-medium">{booking.bookingId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Payment Status</p>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    booking.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                    booking.paymentStatus === 'Failed' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {booking.paymentStatus}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Customer Name</p>
-                  <p className="font-medium">{booking.userName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Amount</p>
-                  <p className="font-medium">₹{booking.amount}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Building</p>
-                  <p className="font-medium">{booking.buildingName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Bed ID</p>
-                  <p className="font-medium">{booking.bedId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Check-in Date</p>
-                  <p className="font-medium">{new Date(booking.checkInDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Check-out Date</p>
-                  <p className="font-medium">{new Date(booking.checkOutDate).toLocaleDateString()}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            {booking?.paymentStatus === 'Paid' && (
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">❌</div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">Payment Error</h1>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="space-y-3">
               <button
-                onClick={() => downloadReceipt(bookingId)}
-                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                onClick={goToBookings}
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                📄 Download Receipt
+                Try Again
               </button>
-            )}
-            
-            <Link
-              to="/bookingpg"
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
-            >
-              Book Another Room
-            </Link>
-            
-            <Link
-              to="/"
-              className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors font-medium text-center"
-            >
-              Go to Home
-            </Link>
-          </div>
-
-          {booking?.paymentStatus === 'Pending' && (
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-sm">
-                <strong>Note:</strong> Your payment is being processed. You will receive a confirmation email once the payment is completed. 
-                You can also check the payment status by clicking the "Check Payment Status" button.
-              </p>
+              <button
+                onClick={goToHome}
+                className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Go to Home
+              </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+        <div className="text-center">
+          {paymentStatus === 'success' ? (
+            <>
+              <div className="text-green-500 text-6xl mb-4">✅</div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-4">Payment Successful!</h1>
+              <p className="text-gray-600 mb-6">
+                Your PG booking has been confirmed and payment has been processed successfully.
+              </p>
+              
+              {bookingDetails && (
+                <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                  <h3 className="font-semibold text-gray-800 mb-2">Booking Details:</h3>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Booking ID:</span> {bookingDetails.bookingId || bookingDetails._id}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Amount:</span> ₹{bookingDetails.amount}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Status:</span> 
+                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                      {bookingDetails.status}
+                    </span>
+                  </p>
+                </div>
+              )}
+              
+              <div className="space-y-3">
+                <button
+                  onClick={downloadReceipt}
+                  className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  📄 Download Receipt
+                </button>
+                <button
+                  onClick={goToHome}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Go to Home
+                </button>
+              </div>
+            </>
+          ) : paymentStatus === 'failed' ? (
+            <>
+              <div className="text-red-500 text-6xl mb-4">❌</div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-4">Payment Failed</h1>
+              <p className="text-gray-600 mb-6">
+                Unfortunately, your payment could not be processed. Please try again or contact support.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={goToBookings}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={goToHome}
+                  className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Go to Home
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+                             <div className="text-yellow-500 text-6xl mb-4">⏳</div>
+               <h1 className="text-2xl font-bold text-gray-800 mb-4">Payment Pending</h1>
+               <p className="text-gray-600 mb-6">
+                 Your payment is being processed. Please wait or check your payment status later.
+               </p>
+               
+               {/* Debug info - remove this in production */}
+               <div className="bg-gray-100 p-3 rounded-lg mb-4 text-left text-sm">
+                 <p className="font-medium text-gray-700">Debug Info:</p>
+                 <p className="text-gray-600">Current Status: {paymentStatus}</p>
+                 <p className="text-gray-600">Booking ID: {searchParams.get('bookingId')}</p>
+                 <p className="text-gray-600">Transaction ID: {searchParams.get('transactionId')}</p>
+               </div>
+                             <div className="space-y-3">
+                 <button
+                   onClick={() => checkPaymentStatus()}
+                   disabled={loading}
+                   className={`w-full py-3 px-6 rounded-lg transition-colors ${
+                     loading 
+                       ? 'bg-gray-400 cursor-not-allowed' 
+                       : 'bg-blue-600 hover:bg-blue-700 text-white'
+                   }`}
+                 >
+                   {loading ? 'Checking Status...' : 'Check Status'}
+                 </button>
+                <button
+                  onClick={goToHome}
+                  className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Go to Home
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

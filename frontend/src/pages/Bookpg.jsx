@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -152,7 +154,10 @@ function Bookpg() {
         buildingName: selectedBed.roomId.buildingName,
         checkInDate: new Date(userForm.checkInDate).toISOString(),
         checkOutDate: new Date(userForm.checkOutDate).toISOString(),
-        amount: selectedBed.price
+        amount: selectedBed.price, // Send amount in rupees (required by model)
+        amountInPaise: Math.round(selectedBed.price * 100), // Also send amountInPaise for consistency
+        status: 'Pending',
+        paymentStatus: 'Pending'
       };
 
       console.log('Booking data being sent:', bookingData);
@@ -198,22 +203,37 @@ function Bookpg() {
       setPaymentLoading(true);
       setMessage('Initiating payment...');
       
+      // Prepare data for the new PG payment system
       const paymentData = {
         bookingId: bookingId,
-        amount: selectedBed.price,
+        userId: userForm.email, // Using email as userId
+        userName: userForm.fullName,
         userMobile: userForm.mobileNumber,
         userEmail: userForm.email,
-        userName: userForm.fullName
+        userWhatsapp: userForm.mobileNumber,
+        bedId: selectedBed.bedId,
+        buildingName: selectedBed.roomId?.buildingName || 'AshokPg',
+        amount: Math.round(selectedBed.price * 100), // Send amount in paise for consistency
+        checkInDate: userForm.checkInDate,
+        checkOutDate: userForm.checkOutDate,
+        pgDetails: {
+          pgName: selectedBed.roomId?.buildingName || 'AshokPg',
+          floor: selectedBed.roomId?.floorNumber || 'Floor 1',
+          room: selectedBed.roomId?.roomNumber || 'Room 101',
+          bedId: selectedBed.bedId,
+          buildingName: selectedBed.roomId?.buildingName || 'AshokPg'
+        }
       };
 
-      console.log('Payment data being sent:', paymentData);
+      console.log('PG Payment data being sent:', paymentData);
 
-      const response = await axios.post(`${API_BASE_URL}/payment/create`, paymentData);
+      // Use the new PG payment endpoint
+      const response = await axios.post(`${API_BASE_URL}/pg-payment/initiate`, paymentData);
       
-      console.log('Payment response:', response.data);
+      console.log('PG Payment response:', response.data);
       
       if (response.data.success) {
-        setMessage('Payment initiated successfully! Redirecting to payment gateway...');
+        setMessage('Payment initiated successfully! Redirecting to PhonePe payment gateway...');
         // Redirect to PhonePe payment page
         window.location.href = response.data.data.redirectUrl;
       } else {
@@ -221,7 +241,7 @@ function Bookpg() {
       }
       
     } catch (error) {
-      console.error('Payment initiation error:', error);
+      console.error('PG Payment initiation error:', error);
       
       let errorMessage = 'Payment initiation failed: ';
       
@@ -642,3 +662,5 @@ function Bookpg() {
 }
 
 export default Bookpg;
+
+

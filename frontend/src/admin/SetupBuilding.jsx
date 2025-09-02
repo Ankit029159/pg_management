@@ -21,9 +21,15 @@ function SetupBuilding() {
     totalRooms: ''
   });
 
+
+
+
+
   const [editingBuilding, setEditingBuilding] = useState(null);
   const [editingFloor, setEditingFloor] = useState(null);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [buildingNameFilter, setBuildingNameFilter] = useState('');
+  const [buildingDropdownFilter, setBuildingDropdownFilter] = useState('');
 
   const API_BASE_URL = 'https://api.pg.gradezy.in/api';
 
@@ -54,6 +60,29 @@ function SetupBuilding() {
     }
   };
 
+  // Filter buildings by name and dropdown
+  const getFilteredBuildings = () => {
+    let filtered = buildings;
+    
+    // Apply text filter
+    if (buildingNameFilter.trim()) {
+      filtered = filtered.filter(building => 
+        building.name.toLowerCase().includes(buildingNameFilter.toLowerCase())
+      );
+    }
+    
+    // Apply dropdown filter
+    if (buildingDropdownFilter) {
+      filtered = filtered.filter(building => 
+        building._id === buildingDropdownFilter
+      );
+    }
+    
+    return filtered;
+  };
+
+
+
   const handleBuildingSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -71,37 +100,7 @@ function SetupBuilding() {
     }
   };
 
-  const handleFloorSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      
-      // Validate required fields
-      if (!floorForm.buildingId) {
-        setMessage('Please select a building');
-        return;
-      }
-      if (!floorForm.floorNumber) {
-        setMessage('Please select a floor number');
-        return;
-      }
-      if (!floorForm.totalRooms || parseInt(floorForm.totalRooms) <= 0) {
-        setMessage('Please enter a valid number of rooms');
-        return;
-      }
 
-      const response = await axios.post(`${API_BASE_URL}/floors/add`, floorForm);
-      setMessage('Floor added successfully!');
-      setFloorForm({ buildingId: '', floorNumber: '', totalRooms: '' });
-      setSelectedBuilding(null);
-      fetchFloors();
-    } catch (error) {
-      console.error('Error adding floor:', error);
-      setMessage('Error adding floor: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleEditBuilding = async (e) => {
     e.preventDefault();
@@ -120,23 +119,7 @@ function SetupBuilding() {
     }
   };
 
-  const handleEditFloor = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      await axios.put(`${API_BASE_URL}/floors/${editingFloor._id}`, floorForm);
-      setMessage('Floor updated successfully!');
-      setEditingFloor(null);
-      setFloorForm({ buildingId: '', floorNumber: '', totalRooms: '' });
-      setSelectedBuilding(null);
-      fetchFloors();
-    } catch (error) {
-      console.error('Error updating floor:', error);
-      setMessage('Error updating floor');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleDeleteBuilding = async (buildingId) => {
     if (window.confirm('Are you sure you want to delete this building?')) {
@@ -171,6 +154,24 @@ function SetupBuilding() {
     }
   };
 
+  const handleEditFloor = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await axios.put(`${API_BASE_URL}/floors/${editingFloor._id}`, floorForm);
+      setMessage('Floor updated successfully!');
+      setEditingFloor(null);
+      setFloorForm({ buildingId: '', floorNumber: '', totalRooms: '' });
+      setSelectedBuilding(null);
+      fetchFloors();
+    } catch (error) {
+      console.error('Error updating floor:', error);
+      setMessage('Error updating floor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startEdit = (building) => {
     setEditingBuilding(building);
     setBuildingForm({
@@ -181,48 +182,39 @@ function SetupBuilding() {
     setActiveTab('add');
   };
 
-  const startEditFloor = (floor) => {
-    setEditingFloor(floor);
-    setFloorForm({
-      buildingId: floor.buildingId,
-      floorNumber: floor.floorNumber,
-      totalRooms: floor.totalRooms
-    });
-    setSelectedBuilding(buildings.find(b => b._id === floor.buildingId));
-    setActiveTab('floors');
-  };
-
   const cancelEdit = () => {
     setEditingBuilding(null);
     setBuildingForm({ name: '', address: '', floors: '' });
+  };
+
+  const startEditFloor = (floor) => {
+    console.log('Editing floor:', floor); // Debug log
+    console.log('Available buildings:', buildings); // Debug log
+    
+    // Try to find the building by name first (since we have buildingName in the table)
+    let selectedBuilding = buildings.find(b => b.name === floor.buildingName);
+    
+    // If found by name, use its ID
+    const buildingId = selectedBuilding ? selectedBuilding._id : '';
+    
+    console.log('Found building by name:', selectedBuilding);
+    console.log('Using buildingId:', buildingId);
+    
+    setEditingFloor(floor);
+    setFloorForm({
+      buildingId: buildingId,
+      floorNumber: floor.floorNumber,
+      totalRooms: floor.totalRooms
+    });
+    
+    setSelectedBuilding(selectedBuilding);
+    setActiveTab('manageFloors');
   };
 
   const cancelEditFloor = () => {
     setEditingFloor(null);
     setFloorForm({ buildingId: '', floorNumber: '', totalRooms: '' });
     setSelectedBuilding(null);
-  };
-
-  const handleBuildingChange = (buildingId) => {
-    setFloorForm({ ...floorForm, buildingId, floorNumber: '' });
-    setSelectedBuilding(buildings.find(b => b._id === buildingId));
-  };
-
-  // Generate floor number options based on building floors
-  const getFloorNumberOptions = () => {
-    if (!selectedBuilding) return [];
-    
-    const existingFloorNumbers = floors
-      .filter(f => f.buildingId === selectedBuilding._id && f._id !== editingFloor?._id)
-      .map(f => f.floorNumber);
-    
-    const options = [];
-    for (let i = 1; i <= selectedBuilding.floors; i++) {
-      if (!existingFloorNumbers.includes(i)) {
-        options.push(i);
-      }
-    }
-    return options;
   };
 
   return (
@@ -250,17 +242,12 @@ function SetupBuilding() {
           Manage Buildings
         </button>
         <button
-          className={`px-4 py-2 ${activeTab === 'floors' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
-          onClick={() => setActiveTab('floors')}
-        >
-          Add Floor
-        </button>
-        <button
           className={`px-4 py-2 ${activeTab === 'manageFloors' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
           onClick={() => setActiveTab('manageFloors')}
         >
           Manage Floors
         </button>
+
       </div>
 
       {/* Add Building Tab */}
@@ -337,6 +324,64 @@ function SetupBuilding() {
           <div className="px-6 py-4 border-b">
             <h2 className="text-xl font-semibold">Manage Buildings</h2>
           </div>
+          
+          {/* Filter Section */}
+          <div className="px-6 py-4 border-b bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Building Name (Text)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter building name to filter..."
+                  value={buildingNameFilter}
+                  onChange={(e) => setBuildingNameFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Building (Dropdown)
+                </label>
+                <select
+                  value={buildingDropdownFilter}
+                  onChange={(e) => setBuildingDropdownFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Buildings</option>
+                  {buildings.map((building) => (
+                    <option key={building._id} value={building._id}>
+                      {building.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setBuildingNameFilter('');
+                  setBuildingDropdownFilter('');
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+            
+            {/* Filter Summary */}
+            {(buildingNameFilter.trim() || buildingDropdownFilter) && (
+              <div className="mt-3 text-sm text-gray-600">
+                Showing {getFilteredBuildings().length} of {buildings.length} buildings
+                {buildingNameFilter.trim() && ` matching "${buildingNameFilter}"`}
+                {buildingDropdownFilter && buildingNameFilter.trim() && ' and '}
+                {buildingDropdownFilter && ` from selected building`}
+              </div>
+            )}
+          </div>
+          
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -359,7 +404,7 @@ function SetupBuilding() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {buildings.map((building) => (
+                {getFilteredBuildings().map((building) => (
                   <tr key={building._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {building.buildingId}
@@ -395,147 +440,144 @@ function SetupBuilding() {
         </div>
       )}
 
-      {/* Add Floor Tab */}
-      {activeTab === 'floors' && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">
-            {editingFloor ? 'Edit Floor' : 'Add New Floor'}
-          </h2>
-          <form onSubmit={editingFloor ? handleEditFloor : handleFloorSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Building
-                </label>
-                <select
-                  value={floorForm.buildingId}
-                  onChange={(e) => handleBuildingChange(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select Building</option>
-                  {buildings.map((building) => (
-                    <option key={building._id} value={building._id}>
-                      {building.name} ({building.floors} floors)
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Floor Number
-                </label>
-                <select
-                  value={floorForm.floorNumber}
-                  onChange={(e) => setFloorForm({...floorForm, floorNumber: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  disabled={!selectedBuilding}
-                >
-                  <option value="">Select Floor Number</option>
-                  {getFloorNumberOptions().map((floorNum) => (
-                    <option key={floorNum} value={floorNum}>
-                      Floor {floorNum}
-                    </option>
-                  ))}
-                </select>
-                {selectedBuilding && getFloorNumberOptions().length === 0 && (
-                  <p className="text-sm text-red-600 mt-1">All floors for this building have been created</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Total Rooms
-                </label>
-                <input
-                  type="number"
-                  value={floorForm.totalRooms}
-                  onChange={(e) => setFloorForm({...floorForm, totalRooms: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex gap-4">
-              <button
-                type="submit"
-                disabled={loading || !selectedBuilding || getFloorNumberOptions().length === 0}
-                className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : (editingFloor ? 'Update Floor' : 'Add Floor')}
-              </button>
-              {editingFloor && (
-                <button
-                  type="button"
-                  onClick={cancelEditFloor}
-                  className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      )}
+
 
       {/* Manage Floors Tab */}
       {activeTab === 'manageFloors' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-semibold">Manage Floors</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Floor No
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Building Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    No. of Rooms
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {floors.map((floor) => (
-                  <tr key={floor._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {floor.floorNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {floor.buildingName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {floor.totalRooms}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => startEditFloor(floor)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteFloor(floor._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+        <div>
+          {/* Floor Edit Form */}
+          {editingFloor && (
+            <div className="bg-white p-6 rounded-lg shadow mb-6">
+              <h3 className="text-lg font-semibold mb-4">Edit Floor</h3>
+              <form onSubmit={handleEditFloor}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Building
+                    </label>
+                                         <select
+                       value={floorForm.buildingId || ''}
+                       onChange={(e) => {
+                         const buildingId = e.target.value;
+                         setFloorForm({ ...floorForm, buildingId });
+                         setSelectedBuilding(buildings.find(b => b._id === buildingId));
+                       }}
+                       className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       required
+                     >
+                       <option value="">Select Building</option>
+                       {buildings.map((building) => (
+                         <option key={building._id} value={building._id}>
+                           {building.name}
+                         </option>
+                       ))}
+                     </select>
+                                           
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Floor Number
+                    </label>
+                    <input
+                      type="number"
+                      value={floorForm.floorNumber}
+                      onChange={(e) => setFloorForm({...floorForm, floorNumber: e.target.value})}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Total Rooms
+                    </label>
+                    <input
+                      type="number"
+                      value={floorForm.totalRooms}
+                      onChange={(e) => setFloorForm({...floorForm, totalRooms: e.target.value})}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {loading ? 'Updating...' : 'Update Floor'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditFloor}
+                    className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+                     {/* Floors Table */}
+           <div className="bg-white rounded-lg shadow overflow-hidden">
+             <div className="px-6 py-4 border-b">
+               <h2 className="text-xl font-semibold">Manage Floors</h2>
+             </div>
+             <div className="overflow-x-auto">
+               <table className="w-full">
+                 <thead className="bg-gray-50">
+                   <tr>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       Floor No
+                     </th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       Building Name
+                     </th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       No. of Rooms
+                     </th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       Actions
+                     </th>
+                   </tr>
+                 </thead>
+                 <tbody className="bg-white divide-y divide-gray-200">
+                   {floors.map((floor) => (
+                     <tr key={floor._id}>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                         {floor.floorNumber}
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                         {floor.buildingName}
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                         {floor.totalRooms}
+                       </td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                         <button
+                           onClick={() => startEditFloor(floor)}
+                           className="text-blue-600 hover:text-blue-900 mr-4"
+                         >
+                           Edit
+                         </button>
+                         <button
+                           onClick={() => handleDeleteFloor(floor._id)}
+                           className="text-red-600 hover:text-red-900"
+                         >
+                           Delete
+                         </button>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }

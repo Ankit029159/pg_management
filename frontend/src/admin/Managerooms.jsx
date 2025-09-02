@@ -35,6 +35,7 @@ function Managerooms() {
   const [editingBed, setEditingBed] = useState(null);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [selectedFloor, setSelectedFloor] = useState(null);
+  const [bedBuildingFilter, setBedBuildingFilter] = useState('');
 
   const API_BASE_URL = 'https://api.pg.gradezy.in/api';
 
@@ -401,6 +402,14 @@ function Managerooms() {
     return options;
   };
 
+  // Filter beds by building
+  const getFilteredBeds = () => {
+    if (!bedBuildingFilter) return beds;
+    return beds.filter(bed => 
+      bed.roomId?.buildingName === bedBuildingFilter
+    );
+  };
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Room Management</h1>
@@ -695,7 +704,52 @@ function Managerooms() {
       {activeTab === 'manageBeds' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-semibold">Manage Beds</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Manage Beds</h2>
+              
+              {/* Building Filter */}
+              <div className="flex items-center space-x-3">
+                <label className="text-sm font-medium text-gray-700">Filter by Building:</label>
+                <select
+                  value={bedBuildingFilter}
+                  onChange={(e) => setBedBuildingFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">All Buildings</option>
+                  {buildings.map((building) => (
+                    <option key={building._id} value={building.name}>
+                      {building.name}
+                    </option>
+                  ))}
+                </select>
+                {bedBuildingFilter && (
+                  <button
+                    onClick={() => setBedBuildingFilter('')}
+                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Filter Summary */}
+            <div className="px-6 py-3 border-b border-gray-200">
+              {bedBuildingFilter ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-sm text-blue-700">
+                    Showing {getFilteredBeds().length} bed(s) from <span className="font-semibold">{bedBuildingFilter}</span> building
+                    <span className="ml-2 text-blue-600">({beds.length} total beds)</span>
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                  <p className="text-sm text-gray-700">
+                    Showing all <span className="font-semibold">{beds.length}</span> bed(s) from all buildings
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Edit Bed Form */}
@@ -820,51 +874,78 @@ function Managerooms() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {beds.map((bed) => (
-                  <tr key={bed._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {bed.bedId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                      {bed.roomId?.buildingName || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                      {bed.roomId?.floorNumber || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {bed.roomNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        bed.status === 'Available' ? 'bg-green-100 text-green-800' :
-                        bed.status === 'Occupied' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {bed.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{bed.price}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {bed.userName || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => startEditBed(bed)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBed(bed._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                  {getFilteredBeds().length > 0 ? (
+                    getFilteredBeds().map((bed) => (
+                      <tr key={bed._id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {bed.bedId}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {bed.roomId?.buildingName || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                          {bed.roomId?.floorNumber || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bed.roomNumber}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            bed.status === 'Available' ? 'bg-green-100 text-green-800' :
+                            bed.status === 'Occupied' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {bed.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ₹{bed.price}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bed.userName || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => startEditBed(bed)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBed(bed._id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                        {bedBuildingFilter ? (
+                          <div>
+                            <p className="text-lg font-medium text-gray-700 mb-2">No beds found</p>
+                            <p className="text-sm text-gray-500">
+                              No beds found in <span className="font-semibold">{bedBuildingFilter}</span> building
+                            </p>
+                            <button
+                              onClick={() => setBedBuildingFilter('')}
+                              className="mt-3 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                            >
+                              View All Beds
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-lg font-medium text-gray-700 mb-2">No beds available</p>
+                            <p className="text-sm text-gray-500">No beds have been added yet</p>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+
               </tbody>
             </table>
           </div>

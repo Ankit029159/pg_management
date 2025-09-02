@@ -5,26 +5,11 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// PhonePe Configuration - Using PRODUCTION environment
-const PHONEPE_CONFIG = {
-  // Production Environment Configuration
-  MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || 'M232T7DTC1W58',
-  SALT_KEY: process.env.PHONEPE_SALT_KEY || '006c20b2-0a39-423a-9cd3-8e359879dd15',
-  SALT_INDEX: process.env.PHONEPE_SALT_INDEX || '1',
-  BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api.phonepe.com/apis/hermes',
-  CALLBACK_URL: process.env.CALLBACK_URL || 'https://api.pg.gradezy.in/api/payment/callback',
-  WEBHOOK_URL: process.env.WEBHOOK_URL || 'https://api.pg.gradezy.in/api/payment/webhook'
-};
+// Import PhonePe configuration
+const PHONEPE_CONFIG = require('../config/phonepeConfig');
 
-// Validate PhonePe configuration
+// Simple PhonePe configuration check
 const validatePhonePeConfig = () => {
-  const requiredFields = ['MERCHANT_ID', 'SALT_KEY', 'SALT_INDEX', 'BASE_URL'];
-  const missingFields = requiredFields.filter(field => !PHONEPE_CONFIG[field]);
-  
-  if (missingFields.length > 0) {
-    throw new Error(`Missing PhonePe configuration: ${missingFields.join(', ')}`);
-  }
-  
   console.log('PhonePe Configuration:', {
     MERCHANT_ID: PHONEPE_CONFIG.MERCHANT_ID,
     BASE_URL: PHONEPE_CONFIG.BASE_URL,
@@ -32,13 +17,13 @@ const validatePhonePeConfig = () => {
   });
 };
 
-// Generate PhonePe checksum
+// Generate PhonePe checksum using salt key
 const generateChecksum = (payload) => {
   const base64 = Buffer.from(JSON.stringify(payload)).toString('base64');
   const string = base64 + '/pg/v1/pay' + PHONEPE_CONFIG.SALT_KEY;
   const sha256 = crypto.createHash('sha256').update(string).digest('hex');
-  const checksum = sha256 + '###' + PHONEPE_CONFIG.SALT_INDEX;
-  return checksum;
+  // PhonePe expects checksum with salt index
+  return sha256 + '###' + PHONEPE_CONFIG.SALT_INDEX;
 };
 
 // @desc    Create PhonePe payment
@@ -85,7 +70,7 @@ const createPayment = async (req, res) => {
       merchantTransactionId: transactionId,
       merchantUserId: booking.userId || 'USER_' + Date.now(),
       amount: Math.round(amount * 100), // Convert to paise and ensure it's an integer
-      redirectUrl: `https://pg.gradezy.in/payment-success?bookingId=${bookingId}`,
+      redirectUrl: `http://localhost:5173/payment-success?bookingId=${bookingId}`,
       redirectMode: 'POST',
       callbackUrl: PHONEPE_CONFIG.CALLBACK_URL,
       mobileNumber: userMobile,
@@ -150,15 +135,15 @@ const createPayment = async (req, res) => {
       
       let errorMessage = 'Payment gateway error: ';
       
-      if (error.response.status === 404) {
-        errorMessage += 'Invalid merchant configuration or API endpoint. Please check PhonePe credentials.';
-      } else if (error.response.status === 400) {
-        errorMessage += 'Invalid request parameters. Please check the payment data.';
-      } else if (error.response.status === 401) {
-        errorMessage += 'Authentication failed. Please check PhonePe credentials.';
-      } else {
-        errorMessage += error.response.data.message || error.response.data.error || 'Unknown error';
-      }
+             if (error.response.status === 404) {
+         errorMessage += 'Invalid client configuration or API endpoint. Please check PhonePe credentials.';
+       } else if (error.response.status === 400) {
+         errorMessage += 'Invalid request parameters. Please check the payment data.';
+       } else if (error.response.status === 401) {
+         errorMessage += 'Authentication failed. Please check PhonePe credentials.';
+       } else {
+         errorMessage += error.response.data.message || error.response.data.error || 'Unknown error';
+       }
       
       return res.status(500).json({
         success: false,
@@ -368,9 +353,73 @@ const getPaymentStatus = async (req, res) => {
   }
 };
 
+// @desc    Test PhonePe configuration
+// @route   GET /api/payment/test-config
+// @access  Public
+const testPhonePeConfig = async (req, res) => {
+  try {
+    console.log('Testing PhonePe configuration...');
+
+    // Simple test payload
+    const testPayload = {
+      merchantId: PHONEPE_CONFIG.MERCHANT_ID,
+      merchantTransactionId: 'TEST_' + Date.now(),
+      merchantUserId: 'TEST_USER',
+      amount: 100,
+      redirectUrl: 'http://localhost:5173/payment-success',
+      redirectMode: 'POST',
+      callbackUrl: PHONEPE_CONFIG.CALLBACK_URL,
+      mobileNumber: '9999999999',
+      paymentInstrument: {
+        type: 'PAY_PAGE'
+      }
+    };
+
+    const checksum = generateChecksum(testPayload);
+    const base64Payload = Buffer.from(JSON.stringify(testPayload)).toString('base64');
+
+    console.log('Test payload:', testPayload);
+    console.log('Generated checksum:', checksum);
+
+    // Simple PhonePe API call
+      const phonepeResponse = await axios.post(
+        `${PHONEPE_CONFIG.BASE_URL}/pg/v1/pay`,
+      { request: base64Payload },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-VERIFY': checksum,
+            'X-MERCHANT-ID': PHONEPE_CONFIG.MERCHANT_ID
+          },
+          timeout: 10000
+        }
+      );
+
+      console.log('PhonePe API Response:', phonepeResponse.data);
+
+      res.status(200).json({
+        success: true,
+      message: 'PhonePe test completed successfully',
+        data: {
+          config: PHONEPE_CONFIG,
+        response: phonepeResponse.data
+      }
+    });
+
+  } catch (error) {
+    console.error('Test error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Test failed',
+      error: error.response?.data || error.message
+    });
+  }
+};
+
 module.exports = {
   createPayment,
   paymentCallback,
   generateReceipt,
-  getPaymentStatus
+  getPaymentStatus,
+  testPhonePeConfig
 };

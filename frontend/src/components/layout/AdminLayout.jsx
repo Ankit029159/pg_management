@@ -5,28 +5,24 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FiGrid, FiSettings, FiUsers, FiFileText, FiMessageSquare, 
   FiCreditCard, FiDollarSign, FiCamera, FiLogOut, FiMenu, FiX, FiUser,
-  FiHome, FiImage, FiShield, FiTrendingUp, FiBell
+  FiHome, FiImage, FiShield, FiTrendingUp, FiBell, FiChevronDown
 } from 'react-icons/fi';
 
 const navItems = [
   { path: 'dashboard', icon: <FiGrid size={20} />, name: 'Dashboard', color: 'from-blue-500 to-blue-600' },
   { path: 'setupbuilding', icon: <FiHome size={20} />, name: 'Setup Building', color: 'from-green-500 to-green-600' },
   { path: 'managerooms', icon: <FiUsers size={20} />, name: 'Manage Rooms', color: 'from-purple-500 to-purple-600' },
-   { path: 'bookingdetails', icon: <FiCreditCard size={20} />, name: 'Booking Details', color: 'from-orange-500 to-orange-600' },
+  { path: 'bookingdetails', icon: <FiCreditCard size={20} />, name: 'Booking Details', color: 'from-orange-500 to-orange-600' },
   { path: 'paymenthistory', icon: <FiDollarSign size={20} />, name: 'Payment History', color: 'from-emerald-500 to-emerald-600' },
-  { path: 'aboutaddmanage', icon: <FiFileText size={20} />, name: 'About Page', color: 'from-indigo-500 to-indigo-600' },
-  { path: 'herosectionaddmanage', icon: <FiImage size={20} />, name: 'Hero Section', color: 'from-pink-500 to-pink-600' },
-  { path: 'servicesaddmanage', icon: <FiSettings size={20} />, name: 'Services Page', color: 'from-yellow-500 to-yellow-600' },
-  { path: 'galleryaddandmanage', icon: <FiCamera size={20} />, name: 'Gallery', color: 'from-red-500 to-red-600' },
+  { path: 'homemanagement', icon: <FiHome size={20} />, name: 'Home Management', color: 'from-indigo-500 to-indigo-600' },
   { path: 'contactmanagement', icon: <FiMessageSquare size={20} />, name: 'Contact Queries', color: 'from-teal-500 to-teal-600' },
-  { path: 'footeraddandmanage', icon: <FiFileText size={20} />, name: 'Footer Management', color: 'from-cyan-500 to-cyan-600' },
- 
 ];
 
 const AdminLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [adminData, setAdminData] = useState(null);
   const [notifications] = useState(3); // Mock notification count
+  const [isHomeManagementOpen, setIsHomeManagementOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -50,6 +46,20 @@ const AdminLayout = () => {
       setSidebarOpen(false);
     }
   }, [location.pathname]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isHomeManagementOpen && !event.target.closest('.home-management-dropdown')) {
+        setIsHomeManagementOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isHomeManagementOpen]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
@@ -161,27 +171,145 @@ const AdminLayout = () => {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-4 space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${
-                    isActive
-                      ? `bg-gradient-to-r ${item.color} text-white shadow-lg transform scale-105`
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                  }`
-                }
-              >
-                <div className={`p-2 rounded-lg ${location.pathname === `/admin/${item.path}` ? 'bg-white/20' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                  {item.icon}
-                </div>
-                <span className="ml-3 font-medium truncate">{item.name}</span>
-                {location.pathname === `/admin/${item.path}` && (
-                  <div className="ml-auto w-2 h-2 bg-white rounded-full flex-shrink-0"></div>
-                )}
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              if (item.path === 'homemanagement') {
+                return (
+                  <div key={item.path} className="relative home-management-dropdown">
+                    <button
+                      onClick={() => setIsHomeManagementOpen(!isHomeManagementOpen)}
+                      className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 group ${
+                        location.pathname.includes('/admin/aboutaddmanage') || 
+                        location.pathname.includes('/admin/herosectionaddmanage') || 
+                        location.pathname.includes('/admin/servicesaddmanage') || 
+                        location.pathname.includes('/admin/galleryaddandmanage') || 
+                        location.pathname.includes('/admin/footeraddandmanage')
+                          ? `bg-gradient-to-r ${item.color} text-white shadow-lg transform scale-105`
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <div className={`p-2 rounded-lg ${
+                          location.pathname.includes('/admin/aboutaddmanage') || 
+                          location.pathname.includes('/admin/herosectionaddmanage') || 
+                          location.pathname.includes('/admin/servicesaddmanage') || 
+                          location.pathname.includes('/admin/galleryaddandmanage') || 
+                          location.pathname.includes('/admin/footeraddandmanage')
+                            ? 'bg-white/20' 
+                            : 'bg-gray-100 group-hover:bg-gray-200'
+                        }`}>
+                          {item.icon}
+                        </div>
+                        <span className="ml-3 font-medium truncate">{item.name}</span>
+                      </div>
+                      <FiChevronDown 
+                        size={16} 
+                        className={`transition-transform duration-200 ${
+                          isHomeManagementOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {isHomeManagementOpen && (
+                      <div className="ml-4 mt-2 space-y-1">
+                        <NavLink
+                          to="aboutaddmanage"
+                          className={({ isActive }) =>
+                            `flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm ${
+                              isActive
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                          onClick={() => setIsHomeManagementOpen(false)}
+                        >
+                          <FiFileText size={16} className="mr-3" />
+                          About Page
+                        </NavLink>
+                        <NavLink
+                          to="herosectionaddmanage"
+                          className={({ isActive }) =>
+                            `flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm ${
+                              isActive
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                          onClick={() => setIsHomeManagementOpen(false)}
+                        >
+                          <FiImage size={16} className="mr-3" />
+                          Hero Section
+                        </NavLink>
+                        <NavLink
+                          to="servicesaddmanage"
+                          className={({ isActive }) =>
+                            `flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm ${
+                              isActive
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                          onClick={() => setIsHomeManagementOpen(false)}
+                        >
+                          <FiSettings size={16} className="mr-3" />
+                          Services Page
+                        </NavLink>
+                        <NavLink
+                          to="galleryaddandmanage"
+                          className={({ isActive }) =>
+                            `flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm ${
+                              isActive
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                          onClick={() => setIsHomeManagementOpen(false)}
+                        >
+                          <FiCamera size={16} className="mr-3" />
+                          Gallery
+                        </NavLink>
+                        <NavLink
+                          to="footeraddandmanage"
+                          className={({ isActive }) =>
+                            `flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm ${
+                              isActive
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                          onClick={() => setIsHomeManagementOpen(false)}
+                        >
+                          <FiFileText size={16} className="mr-3" />
+                          Footer Management
+                        </NavLink>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${
+                      isActive
+                        ? `bg-gradient-to-r ${item.color} text-white shadow-lg transform scale-105`
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }`
+                  }
+                >
+                  <div className={`p-2 rounded-lg ${location.pathname === `/admin/${item.path}` ? 'bg-white/20' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
+                    {item.icon}
+                  </div>
+                  <span className="ml-3 font-medium truncate">{item.name}</span>
+                  {location.pathname === `/admin/${item.path}` && (
+                    <div className="ml-auto w-2 h-2 bg-white rounded-full flex-shrink-0"></div>
+                  )}
+                </NavLink>
+              );
+            })}
           </div>
         </nav>
 
