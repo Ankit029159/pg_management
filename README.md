@@ -91,6 +91,35 @@ A comprehensive PG (Paying Guest) booking management system similar to BookMySho
 - Status, Payment status
 - Admin actions (accept/reject)
 
+## 🚀 Production Deployment
+
+### Live URLs
+- **Frontend**: https://pg.gradezy.in
+- **Backend**: https://api.pg.gradezy.in
+
+### Quick Deployment
+```bash
+# Frontend (Production Build)
+cd frontend
+./build_production.sh          # Linux/Mac
+# or
+build_production.bat           # Windows
+
+# Backend (Production Start)
+cd backend
+npm run prod
+```
+
+### Production Configuration
+- Environment variables configured for production
+- CORS set to production domain only
+- PhonePe payment integration ready
+- PM2 process manager scripts included
+
+📖 **Full Deployment Guide**: [PRODUCTION_DEPLOYMENT_GUIDE.md](./PRODUCTION_DEPLOYMENT_GUIDE.md)
+
+---
+
 ## API Endpoints
 
 ### Buildings
