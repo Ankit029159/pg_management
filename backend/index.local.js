@@ -1,18 +1,20 @@
-
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const connectDB = require('./db/dbconnection'); 
-dotenv.config({ path: 'config.env' });
-
-// Connect to the database
-connectDB();
+const mongoose = require('mongoose');
+require('dotenv').config();
 
 const app = express();
 
-// Configure CORS properly for production
+// Configure CORS based on environment
+const corsOrigins = process.env.NODE_ENV === 'production' 
+  ? ['https://pg.gradezy.in'] 
+  : ['https://pg.gradezy.in', 'http://localhost:3000', 'http://localhost:5173'];
+
+console.log('🌐 CORS Origins:', corsOrigins);
+console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
+
 app.use(cors({
-  origin: ['https://pg.gradezy.in'],
+  origin: corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
@@ -40,10 +42,6 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const simplePaymentRoutes = require('./routes/simplePaymentRoutes');
 const pgPaymentRoutes = require('./routes/pgPaymentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
-const contactRoutes = require('./routes/contactRoutes');
-console.log('pgPaymentRoutes loaded:', pgPaymentRoutes);
-console.log('dashboardRoutes loaded:', dashboardRoutes);
-console.log('contactRoutes loaded:', contactRoutes);
 
 // Use the PORT from environment variables, with a fallback to 5001
 const PORT = process.env.PORT || 5001;
@@ -63,7 +61,6 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/simple-payment', simplePaymentRoutes);
 app.use('/api/pg-payment', pgPaymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/contact', contactRoutes);
 
 // A simple test route
 app.get('/', (req, res) => {
@@ -78,7 +75,8 @@ app.get('/api/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: {
             nodeEnv: process.env.NODE_ENV || 'development',
-            port: process.env.PORT || 5001
+            port: process.env.PORT || 5001,
+            corsOrigins: corsOrigins
         }
     });
 });
@@ -113,35 +111,30 @@ app.use((err, req, res, next) => {
     });
   }
   
-  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-    return res.status(400).json({
-      success: false,
-      message: 'Unexpected file field.'
-    });
-  }
-  
   res.status(500).json({
     success: false,
-    message: 'Something went wrong!'
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log('Registered routes:');
-    console.log('- /api/auth');
-    console.log('- /api/services');
-    console.log('- /api/footer');
-    console.log('- /api/about');
-    console.log('- /api/hero');
-    console.log('- /api/buildings');
-    console.log('- /api/floors');
-    console.log('- /api/rooms');
-    console.log('- /api/beds');
-    console.log('- /api/bookings');
-    console.log('- /api/payment');
-    console.log('- /api/simple-payment');
-    console.log('- /api/pg-payment');
-    console.log('- /api/dashboard');
-});
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    
+    // Start the server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌐 Local URL: http://localhost:${PORT}`);
+      console.log(`📊 Health Check: http://localhost:${PORT}/api/test`);
+      console.log(`💳 Payment API: http://localhost:${PORT}/api/payment`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🧪 PhonePe Test Mode: ${process.env.PHONEPE_TEST_MODE || 'false'}`);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
+  });
+

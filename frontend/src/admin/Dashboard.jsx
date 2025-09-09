@@ -9,7 +9,7 @@ function Dashboard() {
   const [selectedPG, setSelectedPG] = useState(null);
   const navigate = useNavigate();
 
-  const API_BASE_URL = 'https://api.pg.gradezy.in/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
 
   useEffect(() => {
     fetchDashboardData();
@@ -26,6 +26,8 @@ function Dashboard() {
       if (response.data.success) {
         setDashboardData(response.data.data);
         console.log('✅ Dashboard data loaded:', response.data.data);
+        console.log('💰 Total Revenue:', response.data.data.overall?.totalRevenue);
+        console.log('📊 Overall Stats:', response.data.data.overall);
       } else {
         setError('Failed to fetch dashboard data');
       }

@@ -10,7 +10,7 @@ function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'https://api.pg.gradezy.in/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
 
   useEffect(() => {
     const processPayment = async () => {

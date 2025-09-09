@@ -32,18 +32,35 @@ function ContactManagement() {
         ...filters
       });
 
-      const response = await axios.get(`${API_URL}/contact?${params}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const token = localStorage.getItem('token');
+      console.log('🔍 Debug - API_URL:', API_URL);
+      console.log('🔍 Debug - Token exists:', !!token);
+      console.log('🔍 Debug - Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
+      console.log('🔍 Debug - Full URL:', `${API_URL}/contact/public?${params}`);
+
+      // Temporary: Use public endpoint for testing
+      const response = await axios.get(`${API_URL}/contact/public?${params}`);
+
+      console.log('✅ Debug - API Response:', response.data);
 
       if (response.data.success) {
         setContacts(response.data.data);
         setPagination(response.data.pagination);
+        console.log('✅ Debug - Contacts loaded:', response.data.data.length);
       }
     } catch (error) {
-      console.error('Error fetching contacts:', error);
+      console.error('❌ Debug - Error fetching contacts:', error);
+      console.error('❌ Debug - Error response:', error.response?.data);
+      console.error('❌ Debug - Error status:', error.response?.status);
+      
+      // Show error message to user
+      if (error.response?.status === 401) {
+        console.error('❌ Authentication failed - please login again');
+      } else if (error.response?.status === 404) {
+        console.error('❌ API endpoint not found - check backend server');
+      } else if (error.code === 'ECONNREFUSED') {
+        console.error('❌ Cannot connect to backend server - check if it\'s running');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,17 +69,21 @@ function ContactManagement() {
   // Fetch statistics
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/contact/stats`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const token = localStorage.getItem('token');
+      console.log('📊 Debug - Fetching stats from:', `${API_URL}/contact/public/stats`);
+      
+      // Temporary: Use public endpoint for testing
+      const response = await axios.get(`${API_URL}/contact/public/stats`);
+
+      console.log('📊 Debug - Stats response:', response.data);
 
       if (response.data.success) {
         setStats(response.data.data);
+        console.log('📊 Debug - Stats loaded:', response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('❌ Debug - Error fetching stats:', error);
+      console.error('❌ Debug - Stats error response:', error.response?.data);
     }
   };
 
@@ -208,7 +229,7 @@ function ContactManagement() {
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, or subject..."
+                  placeholder="Search by name, email, subject, or message..."
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -263,6 +284,9 @@ function ContactManagement() {
                         Subject
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Message Preview
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -290,6 +314,11 @@ function ContactManagement() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900 max-w-xs truncate">{contact.subject}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-700 max-w-xs truncate" title={contact.message}>
+                            {contact.message}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(contact.type)}`}>

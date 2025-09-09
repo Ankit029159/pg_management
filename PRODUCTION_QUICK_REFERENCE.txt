@@ -1,0 +1,50 @@
+🚀 PG MANAGEMENT SYSTEM - PRODUCTION QUICK REFERENCE
+================================================================
+
+🌐 PRODUCTION URLs:
+Frontend: https://pg.gradezy.in
+Backend: https://api.pg.gradezy.in
+API Base: https://api.pg.gradezy.in/api
+
+🔐 DATABASE:
+MongoDB Atlas: mongodb+srv://fouriseindia1:7UeakpxvP9ZdpIaN@cluster0.gzaimcz.mongodb.net/pg_management
+
+💳 PHONEPE CREDENTIALS:
+Merchant ID: SU2508251500285640112856
+Salt Key: 006c20b2-0a39-423a-9cd3-8e359879dd15
+Salt Index: 1
+Test Mode: false (PRODUCTION)
+
+🔒 JWT SECRET:
+e4b3e3f4a1c5d9b8a3e7f6d2c1b4a9f8d5c3e2a1b4c9d8e7f6a2b1c4d9e8f7a6b5c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b
+
+🛡️ WEBHOOK AUTH:
+Username: Fourise
+Password: 6pMzMtzUQi3nfKB
+
+⚙️ SERVER CONFIG:
+NODE_ENV=production
+PORT=5001
+CORS: https://pg.gradezy.in only
+
+🚀 QUICK SETUP COMMANDS:
+Windows: setup_production.bat
+Linux/Mac: ./setup_production.sh
+
+📋 PRODUCTION ENVIRONMENT FILES:
+Backend: backend/config.env
+Frontend: frontend/.env.production
+
+🔧 DEPLOYMENT COMMANDS:
+Backend: cd backend && npm run prod
+Frontend: cd frontend && npm run build
+
+📊 HEALTH CHECKS:
+Backend: https://api.pg.gradezy.in/api/test
+PhonePe: https://api.pg.gradezy.in/api/test-phonepe
+
+================================================================
+Last Updated: $(date)
+Environment: Production
+Status: Active
+

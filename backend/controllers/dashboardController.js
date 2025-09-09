@@ -3,6 +3,7 @@ const Floor = require('../models/floorModel');
 const Room = require('../models/roomModel');
 const Bed = require('../models/bedModel');
 const Booking = require('../models/bookingModel');
+const PaymentHistory = require('../models/PaymentHistory');
 
 // @desc    Get Dashboard Statistics
 // @route   GET /api/dashboard/stats
@@ -52,8 +53,12 @@ const getDashboardStats = async (req, res) => {
       // Calculate occupancy percentage
       const occupancyPercentage = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
       
-      // Calculate revenue (from active bookings)
-      const totalRevenue = activeBookings.reduce((sum, booking) => sum + booking.amount, 0);
+      // Calculate revenue from all successful payments for this building
+      const successfulPayments = await PaymentHistory.find({
+        paymentStatus: 'SUCCESS',
+        'pgDetails.buildingName': building.name
+      });
+      const totalRevenue = successfulPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
       // Get floor-wise breakdown
       const floorStats = floors.map(floor => {
@@ -109,6 +114,12 @@ const getDashboardStats = async (req, res) => {
     }
 
     // Calculate overall statistics
+    // Get total revenue from all successful payments across all buildings
+    const allSuccessfulPayments = await PaymentHistory.find({
+      paymentStatus: 'SUCCESS'
+    });
+    const totalRevenueFromPayments = allSuccessfulPayments.reduce((sum, payment) => sum + payment.amount, 0);
+    
     const overallStats = {
       totalPGs: dashboardStats.totalPGs,
       totalFloors: dashboardStats.pgs.reduce((sum, pg) => sum + pg.totalFloors, 0),
@@ -116,7 +127,7 @@ const getDashboardStats = async (req, res) => {
       totalBeds: dashboardStats.pgs.reduce((sum, pg) => sum + pg.totalBeds, 0),
       totalOccupiedBeds: dashboardStats.pgs.reduce((sum, pg) => sum + pg.occupiedBeds, 0),
       totalAvailableBeds: dashboardStats.pgs.reduce((sum, pg) => sum + pg.availableBeds, 0),
-      totalRevenue: dashboardStats.pgs.reduce((sum, pg) => sum + pg.totalRevenue, 0),
+      totalRevenue: totalRevenueFromPayments, // Use actual payment history
       averageOccupancy: dashboardStats.pgs.length > 0 
         ? Math.round(dashboardStats.pgs.reduce((sum, pg) => sum + pg.occupancyPercentage, 0) / dashboardStats.pgs.length)
         : 0
@@ -187,7 +198,13 @@ const getPGDetails = async (req, res) => {
     const maintenanceBeds = beds.filter(bed => bed.status === 'Maintenance').length;
     
     const occupancyPercentage = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-    const totalRevenue = activeBookings.reduce((sum, booking) => sum + booking.amount, 0);
+    
+    // Calculate revenue from all successful payments for this building
+    const successfulPayments = await PaymentHistory.find({
+      paymentStatus: 'SUCCESS',
+      'pgDetails.buildingName': building.name
+    });
+    const totalRevenue = successfulPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
     // Get detailed floor breakdown
     const floorDetails = floors.map(floor => {
