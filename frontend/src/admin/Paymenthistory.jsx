@@ -8,7 +8,7 @@ function Paymenthistory() {
   const [filter, setFilter] = useState('all');
   const [autoApproving, setAutoApproving] = useState(false);
 
-  const API_BASE_URL = 'https://api.pg.gradezy.in/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
   useEffect(() => {
     fetchPaymentHistory();

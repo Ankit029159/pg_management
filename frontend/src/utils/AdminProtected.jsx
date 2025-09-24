@@ -19,7 +19,7 @@ const AdminProtected = ({ children }) => {
 
       try {
         // Verify token with backend
-        const response = await fetch('https://api.pg.gradezy.in/api/auth/profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/profile`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

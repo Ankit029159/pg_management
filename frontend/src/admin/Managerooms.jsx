@@ -36,8 +36,15 @@ function Managerooms() {
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [bedBuildingFilter, setBedBuildingFilter] = useState('');
+  
+  // Room filter states
+  const [roomBuildingFilter, setRoomBuildingFilter] = useState('');
+  const [roomFloorFilter, setRoomFloorFilter] = useState('');
+  const [roomTypeFilter, setRoomTypeFilter] = useState('');
+  const [roomStatusFilter, setRoomStatusFilter] = useState('');
+  const [roomSearchFilter, setRoomSearchFilter] = useState('');
 
-  const API_BASE_URL = 'https://api.pg.gradezy.in/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
   useEffect(() => {
     fetchRooms();
@@ -410,6 +417,74 @@ function Managerooms() {
     );
   };
 
+  // Filter rooms by multiple criteria
+  const getFilteredRooms = () => {
+    let filtered = rooms;
+
+    // Filter by building
+    if (roomBuildingFilter) {
+      filtered = filtered.filter(room => 
+        room.buildingName === roomBuildingFilter
+      );
+    }
+
+    // Filter by floor
+    if (roomFloorFilter) {
+      filtered = filtered.filter(room => 
+        room.floorNumber === roomFloorFilter
+      );
+    }
+
+    // Filter by room type
+    if (roomTypeFilter) {
+      filtered = filtered.filter(room => 
+        room.roomType === roomTypeFilter
+      );
+    }
+
+    // Filter by room status (based on available beds)
+    if (roomStatusFilter) {
+      filtered = filtered.filter(room => {
+        switch (roomStatusFilter) {
+          case 'Available':
+            return room.availableBeds > 0;
+          case 'Full':
+            return room.availableBeds === 0;
+          case 'Partially Occupied':
+            return room.availableBeds > 0 && room.availableBeds < room.totalBeds;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filter by search term (room ID or building name)
+    if (roomSearchFilter) {
+      const searchTerm = roomSearchFilter.toLowerCase();
+      filtered = filtered.filter(room => 
+        room.roomId.toLowerCase().includes(searchTerm) ||
+        room.buildingName.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return filtered;
+  };
+
+  // Get unique floor numbers for filter
+  const getUniqueFloors = () => {
+    const floors = [...new Set(rooms.map(room => room.floorNumber))];
+    return floors.sort((a, b) => a - b);
+  };
+
+  // Clear all room filters
+  const clearRoomFilters = () => {
+    setRoomBuildingFilter('');
+    setRoomFloorFilter('');
+    setRoomTypeFilter('');
+    setRoomStatusFilter('');
+    setRoomSearchFilter('');
+  };
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Room Management</h1>
@@ -622,8 +697,124 @@ function Managerooms() {
       {activeTab === 'manage' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-semibold">Manage Rooms</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Manage Rooms</h2>
+              
+              {/* Clear Filters Button */}
+              {(roomBuildingFilter || roomFloorFilter || roomTypeFilter || roomStatusFilter || roomSearchFilter) && (
+                <button
+                  onClick={clearRoomFilters}
+                  className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors border border-red-300"
+                >
+                  Clear All Filters
+                </button>
+              )}
+            </div>
           </div>
+          
+          {/* Filter Section */}
+          <div className="px-6 py-4 border-b bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {/* Search Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search (Room ID / Building)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search rooms..."
+                  value={roomSearchFilter}
+                  onChange={(e) => setRoomSearchFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              
+              {/* Building Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Building
+                </label>
+                <select
+                  value={roomBuildingFilter}
+                  onChange={(e) => setRoomBuildingFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">All Buildings</option>
+                  {buildings.map((building) => (
+                    <option key={building._id} value={building.name}>
+                      {building.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Floor Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Floor
+                </label>
+                <select
+                  value={roomFloorFilter}
+                  onChange={(e) => setRoomFloorFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">All Floors</option>
+                  {getUniqueFloors().map((floor) => (
+                    <option key={floor} value={floor}>
+                      Floor {floor}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Room Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Room Type
+                </label>
+                <select
+                  value={roomTypeFilter}
+                  onChange={(e) => setRoomTypeFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">All Types</option>
+                  <option value="Bedroom">Bedroom</option>
+                  <option value="Hall">Hall</option>
+                </select>
+              </div>
+              
+              {/* Room Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Status
+                </label>
+                <select
+                  value={roomStatusFilter}
+                  onChange={(e) => setRoomStatusFilter(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">All Status</option>
+                  <option value="Available">Available</option>
+                  <option value="Partially Occupied">Partially Occupied</option>
+                  <option value="Full">Full</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Filter Summary */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <p className="text-sm text-blue-700">
+                Showing <span className="font-semibold">{getFilteredRooms().length}</span> room(s) 
+                {roomBuildingFilter && <span> from <span className="font-semibold">{roomBuildingFilter}</span> building</span>}
+                {roomFloorFilter && <span> on <span className="font-semibold">Floor {roomFloorFilter}</span></span>}
+                {roomTypeFilter && <span> of type <span className="font-semibold">{roomTypeFilter}</span></span>}
+                {roomStatusFilter && <span> with status <span className="font-semibold">{roomStatusFilter}</span></span>}
+                {roomSearchFilter && <span> matching "<span className="font-semibold">{roomSearchFilter}</span>"</span>}
+                <span className="ml-2 text-blue-600">({rooms.length} total rooms)</span>
+              </p>
+            </div>
+          </div>
+          
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -650,12 +841,16 @@ function Managerooms() {
                     Available Beds
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {rooms.map((room) => (
+                {getFilteredRooms().length > 0 ? (
+                  getFilteredRooms().map((room) => (
                   <tr key={room._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {room.roomId}
@@ -678,6 +873,17 @@ function Managerooms() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {room.availableBeds}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        room.availableBeds === 0 ? 'bg-red-100 text-red-800' :
+                        room.availableBeds === room.totalBeds ? 'bg-green-100 text-green-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {room.availableBeds === 0 ? 'Full' :
+                         room.availableBeds === room.totalBeds ? 'Available' :
+                         'Partially Occupied'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => startEdit(room)}
@@ -693,7 +899,39 @@ function Managerooms() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                      <div>
+                        <p className="text-lg font-medium text-gray-700 mb-2">No rooms found</p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          {roomBuildingFilter || roomFloorFilter || roomTypeFilter || roomStatusFilter || roomSearchFilter ? (
+                            <>
+                              No rooms match your current filters.
+                              <br />
+                              Try adjusting your search criteria or{' '}
+                              <button
+                                onClick={clearRoomFilters}
+                                className="text-blue-600 hover:text-blue-700 underline"
+                              >
+                                clear all filters
+                              </button>
+                              {' '}to see all rooms.
+                            </>
+                          ) : (
+                            'No rooms have been added yet'
+                          )}
+                        </p>
+                        {rooms.length > 0 && (
+                          <div className="text-sm text-gray-400">
+                            Total rooms in system: {rooms.length}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

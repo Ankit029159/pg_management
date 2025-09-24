@@ -116,7 +116,7 @@ const AdminRegister = () => {
     setErrors({});
 
     try {
-      const response = await fetch('https://api.pg.gradezy.in/api/auth/register', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

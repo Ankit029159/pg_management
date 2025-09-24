@@ -18,7 +18,7 @@ const ServicesAddManage = () => {
   const [uploading, setUploading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://api.pg.gradezy.in/api';
-  const BASE_URL = 'https://api.pg.gradezy.in'; // Fixed base URL
+  const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5001'; // Dynamic base URL
 
   // Helper function to construct image URL
   const getImageUrl = (photoPath) => {

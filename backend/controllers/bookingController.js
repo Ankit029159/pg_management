@@ -18,7 +18,8 @@ const createBooking = async (req, res) => {
       buildingName, 
       checkInDate, 
       checkOutDate, 
-      amount 
+      amount,
+      duration 
     } = req.body;
 
     // Check if bed is available
@@ -63,7 +64,8 @@ const createBooking = async (req, res) => {
       buildingName,
       checkInDate,
       checkOutDate,
-      amount
+      amount,
+      duration // Include duration information
     });
 
     await booking.save();

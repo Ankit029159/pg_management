@@ -98,6 +98,24 @@ function Bookpg() {
     });
   };
 
+  // Calculate duration and total amount
+  const calculateDurationAndAmount = () => {
+    if (!userForm.checkInDate || !userForm.checkOutDate || !selectedBed) {
+      return { days: 0, months: 0, totalAmount: 0 };
+    }
+
+    const checkIn = new Date(userForm.checkInDate);
+    const checkOut = new Date(userForm.checkOutDate);
+    const timeDiff = checkOut.getTime() - checkIn.getTime();
+    const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    const months = Math.ceil(days / 30); // Assuming 30 days per month for calculation
+    
+    // Calculate total amount based on duration
+    const totalAmount = months * selectedBed.price;
+    
+    return { days, months, totalAmount };
+  };
+
   const validateForm = () => {
     if (!userForm.fullName.trim()) {
       setMessage('Full Name is required');
@@ -141,6 +159,9 @@ function Bookpg() {
       setLoading(true);
       setMessage('Creating booking...');
 
+      // Calculate total amount based on duration
+      const { days, months, totalAmount } = calculateDurationAndAmount();
+
       const bookingData = {
         userId: `U${Date.now()}`,
         userName: userForm.fullName,
@@ -153,10 +174,16 @@ function Bookpg() {
         buildingName: selectedBed.roomId.buildingName,
         checkInDate: new Date(userForm.checkInDate).toISOString(),
         checkOutDate: new Date(userForm.checkOutDate).toISOString(),
-        amount: selectedBed.price,
-        amountInPaise: Math.round(selectedBed.price * 100),
+        amount: totalAmount, // Use calculated total amount based on duration
+        amountInPaise: Math.round(totalAmount * 100),
         status: 'Pending',
-        paymentStatus: 'Pending'
+        paymentStatus: 'Pending',
+        // Add duration information for reference
+        duration: {
+          days: days,
+          months: months,
+          monthlyRate: selectedBed.price
+        }
       };
 
       console.log('Booking data being sent:', bookingData);
@@ -199,6 +226,9 @@ function Bookpg() {
       setPaymentLoading(true);
       setMessage('Initiating payment...');
       
+      // Calculate total amount based on duration
+      const { days, months, totalAmount } = calculateDurationAndAmount();
+      
       const paymentData = {
         bookingId: bookingId,
         userId: userForm.email,
@@ -208,7 +238,7 @@ function Bookpg() {
         userWhatsapp: userForm.mobileNumber,
         bedId: selectedBed.bedId,
         buildingName: selectedBed.roomId?.buildingName || 'AshokPg',
-        amount: Math.round(selectedBed.price * 100),
+        amount: Math.round(totalAmount * 100), // Use calculated total amount
         checkInDate: userForm.checkInDate,
         checkOutDate: userForm.checkOutDate,
         pgDetails: {
@@ -661,10 +691,32 @@ function Bookpg() {
                       <div>
                         <p className="font-medium text-gray-900">{selectedBed.roomId?.buildingName}</p>
                         <p className="text-sm text-gray-600">Floor {selectedBed.roomId?.floorNumber} • Room {selectedBed.roomId?.roomId} • Bed {selectedBed.bedId}</p>
+                        {userForm.checkInDate && userForm.checkOutDate && (
+                          <div className="mt-2 text-sm text-gray-500">
+                            {(() => {
+                              const { days, months } = calculateDurationAndAmount();
+                              return (
+                                <span>
+                                  Duration: {days} days ({months} month{months !== 1 ? 's' : ''})
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-bold text-blue-600">₹{selectedBed.price}</p>
-                        <p className="text-sm text-gray-600">per month</p>
+                        {userForm.checkInDate && userForm.checkOutDate ? (
+                          <>
+                            <p className="text-xl font-bold text-blue-600">₹{calculateDurationAndAmount().totalAmount}</p>
+                            <p className="text-sm text-gray-600">total amount</p>
+                            <p className="text-xs text-gray-500">₹{selectedBed.price}/month</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-xl font-bold text-blue-600">₹{selectedBed.price}</p>
+                            <p className="text-sm text-gray-600">per month</p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

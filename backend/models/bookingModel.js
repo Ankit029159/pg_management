@@ -70,6 +70,20 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: false // Will be auto-calculated in pre-save hook
   },
+  duration: {
+    days: {
+      type: Number,
+      required: false
+    },
+    months: {
+      type: Number,
+      required: false
+    },
+    monthlyRate: {
+      type: Number,
+      required: false
+    }
+  },
   transactionId: {
     type: String,
     default: null
