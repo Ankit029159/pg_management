@@ -6,6 +6,9 @@ import MainLayout from '../components/layout/MainLayout'
 import AdminLayout from '../components/layout/AdminLayout'
 
 // Main Pages
+import UserLogin from '../pages/UserLogin'
+import UserRegister from '../pages/UserRegister'
+import Dashboard from '../pages/Dashboard'
 import Home from '../pages/Home'
 import About from '../pages/About' // You were missing this import
 import Services from '../pages/Services'
@@ -16,7 +19,7 @@ import AdminRegister from '../pages/AdminRegister'
 import PaymentSuccess from '../pages/PaymentSuccess';
 
 // Admin Pages
-import Dashboard from '../admin/Dashboard'
+import AdminDashboard from '../admin/Dashboard'
 import ServicesAddManage from '../admin/ServicesAddManage'
 import ContactManagement from '../admin/ContactManagement'
 import Footeraddandmanage from '../admin/Footeraddandmanage'
@@ -45,6 +48,9 @@ function AppRoutes() {
                 <Route path='contact' element={<Contact />}/>
                 <Route path='bookingpg' element={<Bookpg />}/>
                 <Route path='payment-success' element={<PaymentSuccess />}/>
+                <Route path='login' element={<UserLogin />} />
+                <Route path='register' element={<UserRegister />} />
+                <Route path='dashboard' element={<Dashboard />} />
             </Route>
 
             {/* 2. Admin Authentication Routes (No Header or Footer) */}
@@ -53,7 +59,7 @@ function AppRoutes() {
        
             {/* 3. Admin Panel Routes (Protected with AdminProtected) */}
             <Route path='/admin' element={<AdminProtected><AdminLayout /></AdminProtected>}>
-                <Route path='dashboard' element={<Dashboard />}/>
+                <Route path='dashboard' element={<AdminDashboard />}/>
                 <Route path='aboutaddmanage' element={<AboutAddAndManage />}/>
                 <Route path='herosectionaddmanage' element={<Herosectionaddmanage />}/>
                 <Route path='servicesaddmanage' element={<ServicesAddManage />}/>

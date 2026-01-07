@@ -72,7 +72,9 @@ function Footer() {
   ];
 
   if (loading) {
-    return (
+    const safeSocialRender = (url, Icon) => { if(!url) return null; return (<a href={url} target="_blank" rel="noreferrer" className="mr-2 inline-block"><Icon /></a>); };
+
+  return (
       <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-32">
@@ -82,6 +84,8 @@ function Footer() {
       </footer>
     );
   }
+
+  const safeSocialRender = (url, Icon) => { if(!url) return null; return (<a href={url} target="_blank" rel="noreferrer" className="mr-2 inline-block"><Icon /></a>); };
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">

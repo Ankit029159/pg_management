@@ -1,3 +1,4 @@
+const placeholder_img = '/src/assets/react.svg';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 

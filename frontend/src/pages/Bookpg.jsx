@@ -163,7 +163,7 @@ function Bookpg() {
       const { days, months, totalAmount } = calculateDurationAndAmount();
 
       const bookingData = {
-        userId: `U${Date.now()}`,
+        userId: (JSON.parse(localStorage.getItem('pg_current_user') || 'null')?.userId) || `U${Date.now()}` ,
         userName: userForm.fullName,
         userMobile: userForm.mobileNumber,
         userWhatsapp: userForm.whatsappNumber,

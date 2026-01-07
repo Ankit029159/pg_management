@@ -67,7 +67,27 @@ function Header() {
                 {link.title}
               </NavLink>
             ))}
-          </nav>
+          
+            {/* User Auth Links */}
+            {(() => {
+              const user = JSON.parse(localStorage.getItem('pg_current_user') || 'null');
+              if (user) {
+                return (
+                  <>
+                    <NavLink to="/dashboard" className="px-3 py-2 rounded hover:bg-gray-100">Dashboard</NavLink>
+                    <button onClick={() => { localStorage.removeItem('pg_current_user'); window.location.reload(); }} className="px-3 py-2 rounded bg-red-500 text-white">Logout</button>
+                  </>
+                )
+              }
+              return (
+                <>
+                  <NavLink to="/login" className="px-3 py-2 rounded hover:bg-gray-100">Login</NavLink>
+                  <NavLink to="/register" className="px-3 py-2 rounded bg-blue-600 text-white">Register</NavLink>
+                </>
+              )
+            })()}
+
+</nav>
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex md:items-center md:space-x-3">

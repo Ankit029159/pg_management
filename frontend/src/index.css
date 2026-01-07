@@ -19,3 +19,9 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #718096; /* bg-gray-600 */
 }
+
+/* Responsive fixes added by assistant */
+@media (max-width: 768px) {
+  .container { padding: 0 1rem; }
+  .hero { height: auto; }
+}
